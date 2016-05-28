@@ -10,6 +10,6 @@ $(EXAMPLES): %: %.cpp
 	g++ $(FLAGS) $(INCLUDE) $< -o $@
 
 PHONY: clean  
-   
+
 clean :
 	rm $(EXAMPLES)
