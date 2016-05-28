@@ -9,7 +9,7 @@ all: $(EXAMPLES)
 $(EXAMPLES): %: %.cpp
 	g++ $(FLAGS) $(INCLUDE) $< -o $@
 
-PHONY: clean
+PHONY: clean  
 
 clean :
 	rm $(EXAMPLES)
