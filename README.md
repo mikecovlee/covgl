@@ -1,2 +1,2 @@
 # Covariant Graphics Library
-一个小型控制台图形库
+一个小型图形库
