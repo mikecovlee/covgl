@@ -1,26 +1,64 @@
+#pragma once
 // Covariant Graphics Library
 // Version 6.16.8.10 Alpha
 // Head File
 #include <stdexcept>
 #include <typeinfo>
 #include <cmath>
-#include <deque>
 #include <utility>
 #include <array>
 #include <list>
 namespace cov {
 	namespace gl {
+		// 全局基类
+		class baseClass;
+		class baseCtrl;
+		class baseActivity;
+		// 硬件控制器
+		class mouse;
+		class keyboard;
+		class gamepad;
+		class joystick;
+		// 基础类
+		class event;
+		class pixel;
+		class image;
+#ifdef CGL_CONSOLE
+		// 控制台图像属性
+		enum class attris {
+		    alpha = 0xA0,
+		    bright = 0xA1,
+		    underline = 0xA2
+		};
+		enum class layers {
+		    fore = 0xB0,
+		    back = 0xB1
+		};
+		enum class colors {
+		    white = 0xC0,
+		    black = 0xC1,
+		    red = 0xC2,
+		    green = 0xC3,
+		    blue = 0xC4,
+		    magenta = 0xC5,
+		    yellow = 0xC6,
+		    cyan = 0xC7
+		};
+#endif
+		// 基类
 		class baseClass {
 		public:
 			baseClass()=default;
 			baseClass(const baseClass&)=default;
 			baseClass(baseClass&&)=default;
 			virtual ~baseClass()=default;
+			// 在基类中设计类型获取函数，便于识别对象类型
 			virtual const std::type_info& type() const
 			{
 				return typeid(*this);
 			}
 		};
+		// 事件类
 		class event {
 		protected:
 			// 通过抽象灵活支持各类函数，包括Lambda表达式
@@ -78,31 +116,17 @@ namespace cov {
 				mFunc->active(ptr);
 			}
 		};
-		std::size_t event::eventId=0;
-		enum class attris {
-		    alpha = 0xA0,
-		    bright = 0xA1,
-		    underline = 0xA2
-		};
-		enum class layers {
-		    fore = 0xB0,
-		    back = 0xB1
-		};
-		enum class colors {
-		    white = 0xC0,
-		    black = 0xC1,
-		    red = 0xC2,
-		    green = 0xC3,
-		    blue = 0xC4,
-		    magenta = 0xC5,
-		    yellow = 0xC6,
-		    cyan = 0xC7
-		};
+		// 像素类
+#ifdef CGL_CONSOLE
 		class pixel {
 		protected:
+			// 属性
 			std::array<bool,3> mAttri= {{false,false,false}};
+			// 图层
 			layers mLayer=layers::back;
+			// 颜色
 			colors mColor=colors::white;
+			// 字符
 			char mPix=' ';
 		public:
 			pixel()=default;
@@ -156,7 +180,7 @@ namespace cov {
 			{
 				mColor=c;
 			}
-			// 图像
+			// 图像(字符)
 			char image() const
 			{
 				return mPix;
@@ -166,10 +190,69 @@ namespace cov {
 				mPix=pix;
 			}
 		};
+#else
+		class pixel {
+		protected:
+			// RGBA格式32bit颜色
+			std::array<unsigned char,4> mColor= {{0xff,0xff,0xff,0xff}};
+		public:
+			pixel()=default;
+			pixel(const pixel&)=default;
+			pixel(pixel&&)=default;
+			pixel(const std::array<unsigned char,4>&c):mColor(c) {}
+			~pixel()=default;
+			pixel& operator=(const pixel&)=default;
+			pixel& operator=(pixel&&)=default;
+			unsigned char red() const
+			{
+				return mColor[0];
+			}
+			void red(unsigned char val)
+			{
+				mColor[0]=val;
+			}
+			unsigned char green() const
+			{
+				return mColor[1];
+			}
+			void green(unsigned char val)
+			{
+				mColor[1]=val;
+			}
+			unsigned char blue() const
+			{
+				return mColor[2];
+			}
+			void blue(unsigned char val)
+			{
+				mColor[2]=val;
+			}
+			unsigned char alpha() const
+			{
+				return mColor[3];
+			}
+			void alpha(unsigned char val)
+			{
+				mColor[3]=val;
+			}
+			std::array<unsigned char,4>& raw_data()
+			{
+				return mColor;
+			}
+			const std::array<unsigned char,4>& raw_data() const
+			{
+				return mColor;
+			}
+		};
+#endif
+		// 图像类
 		class image {
 		protected:
+			// 尺寸
 			std::size_t mWidth,mHeight;
+			// 源数据
 			pixel* mImage=nullptr;
+			// 拷贝函数
 			void copy(std::size_t w,std::size_t h,pixel* const img)
 			{
 				if(img!=nullptr) {
@@ -274,7 +357,7 @@ namespace cov {
 					at({std::size_t(posit[0]),std::size_t(posit[1])})=pix;
 			}
 			// 多点绘制函数，可设置为连接各个点
-			void draw(const std::deque<std::array<double,2>>& points,const pixel&pix,bool connect_points=false,bool draw_by_scale=false)
+			void draw(const std::list<std::array<double,2>>& points,const pixel&pix,bool connect_points=false,bool draw_by_scale=false)
 			{
 				if(!connect_points) {
 					for(auto &it:points)
@@ -314,85 +397,7 @@ namespace cov {
 						mImage[r*mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
 			}
 		};
-		class baseCtrl;
-		class cursor_map {
-		protected:
-			baseCtrl** mCMap;
-			std::size_t mWidth,mHeight,mCX,mCY;
-			void copy(std::size_t w,std::size_t h,baseCtrl** const map)
-			{
-				if(map!=nullptr) {
-					delete[] mCMap;
-					mCMap=new baseCtrl*[w*h];
-					mWidth=w;
-					mHeight=h;
-					for(int i=0; i<w*h; ++i)
-						mCMap[i]=map[i];
-				}
-			}
-		public:
-			cursor_map():mCMap(nullptr),mWidth(0),mHeight(0),mCX(0),mCY(0) {}
-			cursor_map(std::size_t w,std::size_t h):mCMap(new baseCtrl*[w*h]),mWidth(w),mHeight(h),mCX(0),mCY(0) {}
-			cursor_map(const cursor_map& map):mCMap(nullptr),mWidth(0),mHeight(0),mCX(0),mCY(0)
-			{
-				copy(map.mWidth,map.mHeight,map.mCMap);
-			}
-			cursor_map(cursor_map&& map):mCMap(nullptr),mWidth(0),mHeight(0),mCX(0),mCY(0)
-			{
-				copy(map.mWidth,map.mHeight,map.mCMap);
-			}
-			~cursor_map()
-			{
-				delete[] mCMap;
-			}
-			cursor_map& operator=(const cursor_map& map)
-			{
-				if(&map!=this)
-					copy(map.mWidth,map.mHeight,map.mCMap);
-				return *this;
-			}
-			cursor_map& operator=(cursor_map&& map)
-			{
-				if(&map!=this)
-					copy(map.mWidth,map.mHeight,map.mCMap);
-				return *this;
-			}
-			void resize(std::size_t w,std::size_t h)
-			{
-				delete[] mCMap;
-				mCMap=new baseCtrl*[w*h];
-				mWidth=w;
-				mHeight=h;
-			}
-			void clear()
-			{
-				if(mCMap!=nullptr) {
-					delete[] mCMap;
-					mCMap=new baseCtrl*[mWidth*mHeight];
-				}
-			}
-			void login(const std::array<std::size_t,2>& posit,const std::array<std::size_t,2>& size,baseCtrl* ptr)
-			{
-				std::size_t col(posit[0]),row(posit[1]),sw(size[0]),sh(size[1]);
-				if(mCMap==nullptr)
-					throw std::logic_error(__func__);
-				if(col<0||row<0||col>mWidth||row>mHeight)
-					throw std::out_of_range(__func__);
-				for(std::size_t r=row; r<mHeight&&r-row<sh; ++r)
-					for(std::size_t c=col; c<mWidth&&c-col<sw; ++c)
-						mCMap[r*mWidth+c]=ptr;
-			}
-			void login_with_image(const std::array<std::size_t,2>& posit,const image& img,baseCtrl* ptr)
-			{
-				login(posit, {img.width(),img.height()},ptr);
-			}
-			void logout(baseCtrl* ptr)
-			{
-				for(std::size_t i=0; i<mWidth*mHeight; ++i)
-					if(mCMap[i]==ptr) mCMap=nullptr;
-			}
-			void active(const std::array<std::size_t,2>&);
-		};
+		// 活动(Activity)基类
 		class baseActivity:public baseClass {
 		protected:
 			// 焦点对象
@@ -432,32 +437,51 @@ namespace cov {
 			{
 				return mFocalPoint;
 			}
-			const baseCtrl* focal_point() const
+			baseCtrl* const focal_point() const
 			{
 				return mFocalPoint;
 			}
 			// Activity的渲染及绘制
 			virtual const image& surface() const=0;
 			virtual void render()=0;
+			// Activity的硬件控制器
+			virtual mouse* mouse_controller()=0;
+			virtual mouse* const mouse_controller() const=0;
+			virtual keyboard* keyboard_controller()=0;
+			virtual keyboard* const keyboard_controller() const=0;
+			virtual gamepad* gamepad_controller()=0;
+			virtual gamepad* const gamepad_controller() const=0;
+			virtual joystick* joystick_controller()=0;
+			virtual joystick* const joystick_controller() const=0;
 		};
+		// 控件(Control)基类
 		class baseCtrl:public baseClass {
 		protected:
+			// 宿主Activity指针
 			baseActivity* mHost=nullptr;
+			// 可见性
 			bool mVisable=false;
+			// 是否通过比例绘制
 			bool mDrawByScale=false;
+			// 位置
 			std::array<double,2> mPosit;
-			image mImg;
 		public:
-			static void on_mouse_clicked(baseClass*) {}
-			static void on_keyboard_pressed(baseClass*) {}
-			// 鼠标键盘键入事件，这里默认链接到了两个空函数上，同志们不要偷懒，最好自己写一个
-			event mouse_clicked;
-			event keyboard_pressed;
+			static void mouse_event_handle(baseClass*) {}
+			static void keyboard_event_handle(baseClass*) {}
+			static void gamepad_event_handle(baseClass*) {}
+			// 鼠标键盘以及游戏手柄事件，这里默认链接到了三个空函数上，同志们不要偷懒，最好自己写一个
+			event mouse_event;
+			event keyboard_event;
+			event gamepad_event;
 			// 构造函数
-			baseCtrl():mPosit({0,0}),mouse_clicked(on_mouse_clicked),keyboard_pressed(on_keyboard_pressed) {}
+			baseCtrl():mPosit({0,0}),mouse_event(mouse_event_handle),keyboard_event(keyboard_event_handle),gamepad_event(gamepad_event_handle) {}
 			baseCtrl(const baseCtrl&)=default;
 			baseCtrl(baseCtrl&&)=default;
-			virtual ~baseCtrl()=default;
+			virtual ~baseCtrl()
+			{
+				if(this->mHost!=nullptr)
+					this->mHost->logout(this);
+			}
 			// 做了好久的思想斗争，最终还是把show和hide改成了虚函数，同志们尽情DIY吧…
 			virtual void show()
 			{
@@ -472,14 +496,12 @@ namespace cov {
 			{
 				return this->mHost;
 			}
-			const baseActivity* host() const
+			baseActivity* const host() const
 			{
 				return this->mHost;
 			}
 			void host(baseActivity* ptr)
 			{
-				if(this->mHost!=nullptr)
-					this->mHost->logout(this);
 				this->mHost=ptr;
 			}
 			bool visable() const
@@ -510,22 +532,12 @@ namespace cov {
 			{
 				this->mPosit=p;
 			}
-			const image& surface() const
-			{
-				return this->mImg;
-			}
-			// 渲染函数直接设置为纯虚函数，同志们必须自己动手写咯
+			// 控件的渲染及绘制
+			virtual const image& surface() const=0;
 			virtual void render()=0;
 		};
-		void cursor_map::active(const std::array<std::size_t,2>& posit)
-		{
-			if(mCMap==nullptr)
-				throw std::logic_error(__func__);
-			if(posit[0]<0||posit[1]<0||posit[0]>mWidth||posit[1]>mHeight)
-				throw std::out_of_range(__func__);
-			baseCtrl* obj=mCMap[posit[1]*mWidth+posit[0]];
-			obj->mouse_clicked.active(obj);
-		}
+		// 各类的类外实现
+		std::size_t event::eventId=0;
 		baseActivity::~baseActivity()
 		{
 			for(auto&it:this->mCtrlList)
