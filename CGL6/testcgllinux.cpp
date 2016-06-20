@@ -39,6 +39,16 @@ int main()
 	int jump_frame(4);
 	std::cin>>jump_frame;
 	ioctrl.init_output_method();
+	char sbuf[512];
+	fgets(sbuf,512,stdin);
+	std::cout<<"Please set the \"up\" key.Default key is \'A\'.Press enter to skip."<<std::endl;
+	char key_up=GetKbHit();
+	if(key_up=='\n')
+		key_up='a';
+	std::cout<<"Please set the \"down\" key.Default key is \'Z\'.Press enter to skip."<<std::endl;
+	char key_down=GetKbHit();
+	if(key_down=='\n')
+		key_down='z';
 	int num3[]= {
 		1,1,1,1,1,1,
 		0,0,0,0,1,1,
@@ -155,18 +165,18 @@ int main()
 			++delay_frame;
 		if(KbHit()) {
 			char in=GetKbHit();
-			if(in=='8') {
-				if(xj) {
-					if(z2+zkh<img.height()-1) ++z2;
-				} else {
-					if(z1+zkh<img.height()-1)++z1;
-				}
-			}
-			if(in=='2') {
+			if(in==key_up) {
 				if(xj) {
 					if(z2>0) --z2;
 				} else {
 					if(z1>0) --z1;
+				}
+			}
+			if(in==key_down) {
+				if(xj) {
+					if(z2+zkh<img.height()-1) ++z2;
+				} else {
+					if(z1+zkh<img.height()-1)++z1;
 				}
 			}
 		}
