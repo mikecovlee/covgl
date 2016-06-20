@@ -1,6 +1,23 @@
 #pragma once
+
 // Covariant Graphics Library
-// Version 6.16.8.10 Alpha
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Copyright (C) 2016 Mike Covariant Lee(李登淳)
+// Version 6.16.8.10 Beta
+
 // Head File
 #include <stdexcept>
 #include <typeinfo>
@@ -10,29 +27,24 @@
 #include <list>
 namespace cov {
 	namespace gl {
-		// 全局基类
+// 全局基类
 		class baseClass;
 		class baseCtrl;
 		class baseActivity;
-		// 硬件控制器
+// 硬件控制器
 		class mouse;
 		class keyboard;
 		class gamepad;
 		class joystick;
-		// 基础类
+// 基础类
 		class event;
 		class pixel;
 		class image;
 #ifdef CGL_CONSOLE
-		// 控制台图像属性
+// 控制台图像属性
 		enum class attris {
-		    alpha = 0xA0,
-		    bright = 0xA1,
-		    underline = 0xA2
-		};
-		enum class layers {
-		    fore = 0xB0,
-		    back = 0xB1
+		    bright = 0xA0,
+		    underline = 0xA1
 		};
 		enum class colors {
 		    white = 0xC0,
@@ -45,7 +57,7 @@ namespace cov {
 		    cyan = 0xC7
 		};
 #endif
-		// 基类
+// 基类
 		class baseClass {
 		public:
 			baseClass()=default;
@@ -58,7 +70,7 @@ namespace cov {
 				return typeid(*this);
 			}
 		};
-		// 事件类
+// 事件类
 		class event {
 		protected:
 			// 通过抽象灵活支持各类函数，包括Lambda表达式
@@ -116,42 +128,41 @@ namespace cov {
 				mFunc->active(ptr);
 			}
 		};
-		// 像素类
+// 像素类
 #ifdef CGL_CONSOLE
 		class pixel {
 		protected:
 			// 属性
-			std::array<bool,3> mAttri= {{false,false,false}};
-			// 图层
-			layers mLayer=layers::back;
+			std::array<bool,2> mAttri= {{false,false}};
 			// 颜色
-			colors mColor=colors::white;
+			std::array<colors,2> mColor= {{colors::white,colors::black}};
 			// 字符
 			char mPix=' ';
 		public:
 			pixel()=default;
 			pixel(const pixel&)=default;
 			pixel(pixel&&)=default;
-			pixel(const std::array<bool,3>&a,layers l,colors c,char pix):mAttri(a),mLayer(l),mColor(c),mPix(pix) {}
+			pixel(const std::array<bool,2>&a,const std::array<colors,2>& c,char pix):mAttri(a),mColor(c),mPix(pix) {}
 			~pixel()=default;
 			pixel& operator=(const pixel&)=default;
 			pixel& operator=(pixel&&)=default;
 			// Attribute设置和获取函数
-			const std::array<bool,3>& attri() const
+			std::array<bool,2>& attri()
+			{
+				return mAttri;
+			}
+			const std::array<bool,2>& attri() const
 			{
 				return mAttri;
 			}
 			void attri(attris a,bool key=true)
 			{
 				switch(a) {
-				case attris::alpha:
+				case attris::bright:
 					mAttri[0]=key;
 					break;
-				case attris::bright:
-					mAttri[1]=key;
-					break;
 				case attris::underline:
-					mAttri[2]=key;
+					mAttri[1]=key;
 					break;
 				default:
 					throw std::out_of_range(__func__);
@@ -162,21 +173,16 @@ namespace cov {
 				for(auto &it:mAttri)
 					it=false;
 			}
-			// 图层
-			layers layer() const
-			{
-				return mLayer;
-			}
-			void layer(layers lay)
-			{
-				mLayer=lay;
-			}
 			// 颜色
-			colors color() const
+			std::array<colors,2>& color()
 			{
 				return mColor;
 			}
-			void color(colors c)
+			const std::array<colors,2>& color() const
+			{
+				return mColor;
+			}
+			void color(const std::array<colors,2>& c)
 			{
 				mColor=c;
 			}
@@ -187,7 +193,10 @@ namespace cov {
 			}
 			void image(char pix)
 			{
-				mPix=pix;
+				if (pix < 32 || pix > 126)
+					mPix = ' ';
+				else
+					mPix=pix;
 			}
 		};
 #else
@@ -245,7 +254,7 @@ namespace cov {
 			}
 		};
 #endif
-		// 图像类
+// 图像类
 		class image {
 		protected:
 			// 尺寸
@@ -336,7 +345,7 @@ namespace cov {
 			{
 				if(mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(posit[0]<0||posit[1]<0||posit[0]>mWidth||posit[1]>mHeight)
+				if(posit[0]<0||posit[1]<0||posit[0]>mWidth-1||posit[1]>mHeight-1)
 					throw std::out_of_range(__func__);
 				return mImage[posit[1]*mWidth+posit[0]];
 			}
@@ -344,7 +353,7 @@ namespace cov {
 			{
 				if(mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(posit[0]<0||posit[1]<0||posit[0]>mWidth||posit[1]>mHeight)
+				if(posit[0]<0||posit[1]<0||posit[0]>mWidth-1||posit[1]>mHeight-1)
 					throw std::out_of_range(__func__);
 				return mImage[posit[1]*mWidth+posit[0]];
 			}
@@ -374,7 +383,7 @@ namespace cov {
 						else
 							a=h;
 						a=std::abs(a);
-						for(double c=0; c<=1; c+=1/a) {
+						for(double c=0; c<=1; c+=1.0/a) {
 							draw({x1+c*w,y1+c*h},pix);
 						}
 					}
@@ -390,14 +399,14 @@ namespace cov {
 				}
 				if(mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(col<0||row<0||col>mWidth||row>mHeight)
+				if(col<0||row<0||col>mWidth-1||row>mHeight-1)
 					throw std::out_of_range(__func__);
 				for(std::size_t r=row; r<mHeight&&r-row<img.mHeight; ++r)
 					for(std::size_t c=col; c<mWidth&&c-col<img.mWidth; ++c)
 						mImage[r*mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
 			}
 		};
-		// 活动(Activity)基类
+// 活动(Activity)基类
 		class baseActivity:public baseClass {
 		protected:
 			// 焦点对象
@@ -454,7 +463,7 @@ namespace cov {
 			virtual joystick* joystick_controller()=0;
 			virtual joystick* const joystick_controller() const=0;
 		};
-		// 控件(Control)基类
+// 控件(Control)基类
 		class baseCtrl:public baseClass {
 		protected:
 			// 宿主Activity指针
@@ -536,7 +545,7 @@ namespace cov {
 			virtual const image& surface() const=0;
 			virtual void render()=0;
 		};
-		// 各类的类外实现
+// 各类的类外实现
 		std::size_t event::eventId=0;
 		baseActivity::~baseActivity()
 		{
