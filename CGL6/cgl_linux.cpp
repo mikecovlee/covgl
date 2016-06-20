@@ -45,6 +45,7 @@ namespace cov {
 			}
 			void init() override
 			{
+				rst_attri();
 				clrscr();
 				mReady = true;
 				std::ios::sync_with_stdio(false);
@@ -52,6 +53,7 @@ namespace cov {
 			}
 			void stop() override
 			{
+				rst_attri();
 				clrscr();
 				mReady = false;
 				std::ios::sync_with_stdio(true);

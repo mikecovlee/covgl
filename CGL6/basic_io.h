@@ -1,6 +1,9 @@
 #pragma once
 #include "cgk3.h"
 #include "covstdlib.h"
+#include <cstdio>
+#include <csignal>
+#include <cstdlib>
 namespace cov {
 	namespace gl {
 // 鼠标类
@@ -129,6 +132,8 @@ namespace cov {
 			//目标尺寸获取
 			static std::size_t get_target_width();
 			static std::size_t get_target_height();
+			static void force_exit(int);
+			static void handle_segfault(int);
 			//硬件注册
 			void set_mouse(mouse* device)
 			{
@@ -155,15 +160,19 @@ namespace cov {
 			{
 				if(mOutput==nullptr)
 					throw std::runtime_error(__func__);
+				signal(SIGSEGV,handle_segfault);
+				signal(SIGINT,force_exit);
 				mOutput->init();
 			}
 			void stop_output_method()
 			{
 				if(mOutput==nullptr)
 					throw std::runtime_error(__func__);
+				signal(SIGSEGV,nullptr);
+				signal(SIGINT,nullptr);
 				mOutput->stop();
 			}
-			bool out_method_ready() const
+			bool output_method_ready() const
 			{
 				if(mOutput==nullptr)
 					throw std::runtime_error(__func__);
@@ -236,5 +245,20 @@ namespace cov {
 			}
 		};
 		static basic_io ioctrl;
+		void basic_io::force_exit(int flag)
+		{
+			if(ioctrl.output_method_ready())
+				ioctrl.stop_output_method();
+			printf("CovGl have been exited safety.\n");
+			exit(0);
+		}
+		void basic_io::handle_segfault(int flag)
+		{
+			if(ioctrl.output_method_ready())
+				ioctrl.stop_output_method();
+			printf("Your program have some problem about the Segmentation Fault.Please check your program after we terminate this program.\n");
+			printf("CovGl have been exited safety.\n");
+			exit(0);
+		}
 	}
 }
