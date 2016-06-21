@@ -1,15 +1,36 @@
 #pragma once
-#include "cgk3.h"
+
+// Covariant Graphics Library 6 Basic I/O
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Copyright (C) 2016 Mike Covariant Lee(李登淳)
+// Version: 6.16.7.10 Beta
+
 #include "covstdlib.h"
+#include "cgk3.h"
 #include <cstdio>
-#include <csignal>
 #include <cstdlib>
+#include <csignal>
+
 namespace cov {
 	namespace gl {
 // 鼠标类
 		class mouse {
 		public:
 			//鼠标事件
+			//左键点击，右键点击，滚轮点击，滚轮向上，滚轮向下
 			enum class events {
 			    null,left_click,right_click,roller_click,roller_up,roller_down
 			};
@@ -18,6 +39,7 @@ namespace cov {
 			baseCtrl ** mCMap;
 			std::size_t mWidth, mHeight, mCX, mCY;
 		public:
+			// 鼠标硬件类将不允许被复制
 			mouse():mCMap(nullptr), mWidth(0), mHeight(0), mCX(0), mCY(0)
 			{
 			}
@@ -77,6 +99,7 @@ namespace cov {
 						mCMap = nullptr;
 			}
 			//光标位置获取
+			//请各位开发者劳神把鼠标的相对位置转换为绝对位置
 			std::size_t cursor_x() const
 			{
 				return mCX;
@@ -132,6 +155,7 @@ namespace cov {
 			//目标尺寸获取
 			static std::size_t get_target_width();
 			static std::size_t get_target_height();
+			// 信号处理
 			static void force_exit(int);
 			static void handle_segfault(int);
 			//硬件注册
@@ -222,6 +246,7 @@ namespace cov {
 				mFrameLimit=frame;
 			}
 			// 更新图像
+			// 通过计算平均帧绘制花费时间并在此基础上对每一帧的绘制增加一点Delay时间，来避免低配置设备卡死
 			void update_image(const image& img)
 			{
 				if(mOutput!=nullptr) {
@@ -255,6 +280,7 @@ namespace cov {
 			}
 		};
 		static basic_io ioctrl;
+// 信号处理函数
 		void basic_io::force_exit(int flag)
 		{
 			if(ioctrl.output_method_ready())

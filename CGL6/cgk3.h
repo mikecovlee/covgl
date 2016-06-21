@@ -1,6 +1,6 @@
 #pragma once
 
-// Covariant Graphics Library
+// Covariant Graphics Library 6
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,15 +16,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Copyright (C) 2016 Mike Covariant Lee(李登淳)
-// Version 6.16.8.10 Beta
+// Version: 6.16.8.10 Beta
+// Kernel Version: 3.16.7.10 Beta
 
-// Head File
+#if __cplusplus < 201103L
+#error Covariant C++ Library需要您的编译器支持C++11(C++0x)或者更高标准。请检查您否忘记了[-std=c++11]编译选项。
+#else
+
+// Covariant Graphics Kernel 3
+
 #include <stdexcept>
 #include <typeinfo>
 #include <cmath>
 #include <utility>
 #include <array>
 #include <list>
+
 namespace cov {
 	namespace gl {
 // 全局基类
@@ -46,6 +53,7 @@ namespace cov {
 		    bright = 0xA0,
 		    underline = 0xA1
 		};
+// 控制台图像颜色
 		enum class colors {
 		    white = 0xC0,
 		    black = 0xC1,
@@ -58,6 +66,7 @@ namespace cov {
 		};
 #endif
 // 基类
+// 我们要求大部分CGL对象都派生于本基类
 		class baseClass {
 		public:
 			baseClass()=default;
@@ -71,6 +80,8 @@ namespace cov {
 			}
 		};
 // 事件类
+// 你可以利用事件来灵活处理一些无法预期的行为
+// 在相应的事件处理函数中你可以利用std::dynamic_cast将baseClass指针进行下行转换
 		class event {
 		protected:
 			// 通过抽象灵活支持各类函数，包括Lambda表达式
@@ -133,8 +144,10 @@ namespace cov {
 		class pixel {
 		protected:
 			// 属性
+			// 数组第一个元素为高亮属性，第二个为下划线属性
 			std::array<bool,2> mAttri= {{false,false}};
 			// 颜色
+			// 数组第一个元素为前景色，第二个元素为背景色
 			std::array<colors,2> mColor= {{colors::white,colors::black}};
 			// 字符
 			char mPix=' ';
@@ -191,6 +204,7 @@ namespace cov {
 			{
 				return mPix;
 			}
+			// 如果设置的字符不是合法字符，那么会被替换为空格
 			void image(char pix)
 			{
 				if (pix < 32 || pix > 126)
@@ -318,6 +332,8 @@ namespace cov {
 				return mHeight;
 			}
 			// 重新设置尺寸
+			// resize将令您失去所有数据，请注意备份
+			// resize之前请注意判断您设置的尺寸是否与原来相同，以避免多余的性能开销
 			void resize(std::size_t w,std::size_t h)
 			{
 				delete[] mImage;
@@ -341,6 +357,7 @@ namespace cov {
 				}
 			}
 			// 通过二维坐标访问图像
+			// 您不必在意double与std::size_t之间转换的警告
 			pixel& at(const std::array<std::size_t,2>& posit)
 			{
 				if(mImage==nullptr)
@@ -357,7 +374,7 @@ namespace cov {
 					throw std::out_of_range(__func__);
 				return mImage[posit[1]*mWidth+posit[0]];
 			}
-			// 单点绘制函数
+			// 单点绘制函数，通过设置最后一个参数来开启通过比例绘制的选项
 			void draw(const std::array<double,2>& posit,const pixel& pix,bool draw_by_scale=false)
 			{
 				if(draw_by_scale)
@@ -365,7 +382,7 @@ namespace cov {
 				else
 					at({std::size_t(posit[0]),std::size_t(posit[1])})=pix;
 			}
-			// 多点绘制函数，可设置为连接各个点
+			// 多点绘制函数，可设置为连接各个点。当连接多个点时将不允许通过比例绘制
 			void draw(const std::list<std::array<double,2>>& points,const pixel&pix,bool connect_points=false,bool draw_by_scale=false)
 			{
 				if(!connect_points) {
@@ -389,7 +406,7 @@ namespace cov {
 					}
 				}
 			}
-			// 绘制图像函数
+			// 绘制图像函数，你同样可以通过设置最后一个参数来开启通过比例绘制
 			void draw(const std::array<double,2>& posit,const image& img,bool draw_by_scale=false)
 			{
 				std::size_t col(posit[0]),row(posit[1]);
@@ -475,10 +492,11 @@ namespace cov {
 			// 位置
 			std::array<double,2> mPosit;
 		public:
+			// 硬件事件的处理函数
 			static void mouse_event_handle(baseClass*) {}
 			static void keyboard_event_handle(baseClass*) {}
 			static void gamepad_event_handle(baseClass*) {}
-			// 鼠标键盘以及游戏手柄事件，这里默认链接到了三个空函数上，同志们不要偷懒，最好自己写一个
+			// 鼠标键盘以及游戏手柄事件，这里默认链接到了三个空函数上，请不要偷懒，最好自己写一个
 			event mouse_event;
 			event keyboard_event;
 			event gamepad_event;
@@ -567,3 +585,4 @@ namespace cov {
 		}
 	}
 }
+#endif
