@@ -232,14 +232,24 @@ namespace cov {
 							mAverageTimeCoast/=2;
 						} else
 							mAverageTimeCoast=time_coast;
-						if(mAverageTimeCoast*1.2-time_coast>0)
-							cov::clocks.delay(cov::timer::timeUnit::milliSec,mAverageTimeCoast*1.2-time_coast);
+						if(mAverageTimeCoast*1.3-time_coast>0)
+							cov::clocks.delay(cov::timer::timeUnit::milliSec,mAverageTimeCoast*1.3-time_coast);
 						mFPS=1000/mAverageTimeCoast;
 					} else {
 						int delay_time=1000/mFrameLimit;
-						if(delay_time-time_coast>0)
+						if(delay_time-time_coast>0) {
 							cov::clocks.delay(cov::timer::timeUnit::milliSec,delay_time-time_coast);
-						mFPS=mFrameLimit;
+							mFPS=mFrameLimit;
+						} else {
+							if(mAverageTimeCoast!=0) {
+								mAverageTimeCoast+=time_coast;
+								mAverageTimeCoast/=2;
+							} else
+								mAverageTimeCoast=time_coast;
+							if(mAverageTimeCoast*1.3-time_coast>0)
+								cov::clocks.delay(cov::timer::timeUnit::milliSec,mAverageTimeCoast*1.3-time_coast);
+							mFPS=1000/mAverageTimeCoast;
+						}
 					}
 				}
 			}
