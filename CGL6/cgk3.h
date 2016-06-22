@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 
 // Covariant Graphics Library 6
 
@@ -374,23 +374,22 @@ namespace cov {
 					throw std::out_of_range(__func__);
 				return mImage[posit[1]*mWidth+posit[0]];
 			}
-			// 单点绘制函数，通过设置最后一个参数来开启通过比例绘制的选项
-			void draw(const std::array<double,2>& posit,const pixel& pix,bool draw_by_scale=false)
+			// 单点绘制函数
+			void draw(const std::array<std::size_t,2>& posit,const pixel& pix)
 			{
-				if(draw_by_scale)
-					at({std::size_t(mWidth*posit[0]),std::size_t(mHeight*posit[1])})=pix;
-				else
-					at({std::size_t(posit[0]),std::size_t(posit[1])})=pix;
+				at(posit)=pix;
+			}
+			void draw_by_scale(const std::array<double,2>& posit,const pixel& pix)
+			{
+				at({std::size_t(mWidth*posit[0]),std::size_t(mHeight*posit[1])})=pix;
 			}
 			// 多点绘制函数，可设置为连接各个点。当连接多个点时将不允许通过比例绘制
-			void draw(const std::list<std::array<double,2>>& points,const pixel&pix,bool connect_points=false,bool draw_by_scale=false)
+			void draw(const std::list<std::array<std::size_t,2>>& points,const pixel& pix,bool connect_points=false)
 			{
 				if(!connect_points) {
 					for(auto &it:points)
-						draw(it,pix,draw_by_scale);
+						draw(it,pix);
 				} else {
-					if(draw_by_scale)
-						throw std::logic_error(__func__);
 					auto p0=points.begin();
 					auto p1=++points.begin();
 					for(; p1!=points.end(); ++p0,++p1) {
@@ -401,19 +400,31 @@ namespace cov {
 							a=h;
 						a=std::abs(a);
 						for(double c=0; c<=1; c+=1.0/a) {
-							draw({x1+c*w,y1+c*h},pix);
+							draw({std::size_t(x1+c*w),std::size_t(y1+c*h)},pix);
 						}
 					}
 				}
 			}
+			void draw_by_scale(const std::list<std::array<double,2>>& points,const pixel&pix)
+			{
+				for(auto &it:points)
+					draw_by_scale(it,pix);
+			}
 			// 绘制图像函数，你同样可以通过设置最后一个参数来开启通过比例绘制
-			void draw(const std::array<double,2>& posit,const image& img,bool draw_by_scale=false)
+			void draw(const std::array<std::size_t,2>& posit,const image& img)
 			{
 				std::size_t col(posit[0]),row(posit[1]);
-				if(draw_by_scale) {
-					col=mWidth*posit[0];
-					row=mHeight*posit[1];
-				}
+				if(mImage==nullptr)
+					throw std::logic_error(__func__);
+				if(col<0||row<0||col>mWidth-1||row>mHeight-1)
+					throw std::out_of_range(__func__);
+				for(std::size_t r=row; r<mHeight&&r-row<img.mHeight; ++r)
+					for(std::size_t c=col; c<mWidth&&c-col<img.mWidth; ++c)
+						mImage[r*mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
+			}
+			void draw_by_scale(const std::array<double,2>& posit,const image& img,bool draw_by_scale=false)
+			{
+				std::size_t col(mWidth*posit[0]),row(mHeight*posit[1]);
 				if(mImage==nullptr)
 					throw std::logic_error(__func__);
 				if(col<0||row<0||col>mWidth-1||row>mHeight-1)
