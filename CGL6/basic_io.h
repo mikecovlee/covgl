@@ -186,6 +186,7 @@ namespace cov {
 					throw std::runtime_error(__func__);
 				signal(SIGSEGV,handle_segfault);
 				signal(SIGINT,force_exit);
+				signal(SIGABRT,force_exit);
 				mOutput->init();
 			}
 			void stop_output_method()
@@ -194,6 +195,7 @@ namespace cov {
 					throw std::runtime_error(__func__);
 				signal(SIGSEGV,nullptr);
 				signal(SIGINT,nullptr);
+				signal(SIGABRT,nullptr);
 				mOutput->stop();
 			}
 			bool output_method_ready() const

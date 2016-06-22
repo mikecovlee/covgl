@@ -1422,9 +1422,9 @@ namespace cov {
 				allocator<T>::recycle();
 			}
 		}
-		template<typename T> extern std::allocator<T> sourceHolder<T>::sourceManager;
+		template<typename T> std::allocator<T> sourceHolder<T>::sourceManager;
 		template<typename T> const T* sourceHolder<T>::hintAddr=nullptr;
-		template<typename T> extern typename allocator<T>::collector allocator<T>::mCollector;
+		template<typename T> typename allocator<T>::collector allocator<T>::mCollector;
 	}
 }
 #endif
