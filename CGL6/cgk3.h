@@ -1,4 +1,4 @@
-//#pragma once
+#pragma once
 
 // Covariant Graphics Library 6
 
@@ -16,8 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Copyright (C) 2016 Mike Covariant Lee(李登淳)
-// Version: 6.16.8.10 Beta
-// Kernel Version: 3.16.7.10 Beta
+// Kernel Version: 3.16.7.10
 
 #if __cplusplus < 201103L
 #error Covariant C++ Library需要您的编译器支持C++11(C++0x)或者更高标准。请检查您否忘记了[-std=c++11]编译选项。
@@ -279,12 +278,12 @@ namespace cov {
 			void copy(std::size_t w,std::size_t h,pixel* const img)
 			{
 				if(img!=nullptr) {
-					delete[] mImage;
-					mImage=new pixel[w*h];
-					mWidth=w;
-					mHeight=h;
-					for(int i=0; i<mWidth*mHeight; ++i)
-						mImage[i]=img[i];
+					delete[] this->mImage;
+					this->mImage=new pixel[w*h];
+					this->mWidth=w;
+					this->mHeight=h;
+					for(int i=0; i<this->mWidth*this->mHeight; ++i)
+						this->mImage[i]=img[i];
 				}
 			}
 		public:
@@ -292,7 +291,7 @@ namespace cov {
 			image(std::size_t w,std::size_t h):mImage(new pixel[h*w]),mWidth(w),mHeight(h) {}
 			image(std::size_t w,std::size_t h,const pixel& pix):mImage(new pixel[h*w]),mWidth(w),mHeight(h)
 			{
-				for(pixel* it=mImage; it!=mImage+w*h; ++it) *it=pix;
+				for(pixel* it=this->mImage; it!=this->mImage+w*h; ++it) *it=pix;
 			}
 			image(const image& img):mWidth(0),mHeight(0),mImage(nullptr)
 			{
@@ -304,91 +303,91 @@ namespace cov {
 			}
 			~image()
 			{
-				delete[] mImage;
+				delete[] this->mImage;
 			}
 			image& operator=(const image& img)
 			{
 				if(&img!=this)
-					copy(img.mWidth,img.mHeight,img.mImage);
+					this->copy(img.mWidth,img.mHeight,img.mImage);
 				return *this;
 			}
 			image& operator=(image&& img)
 			{
 				if(&img!=this)
-					copy(img.mWidth,img.mHeight,img.mImage);
+					this->copy(img.mWidth,img.mHeight,img.mImage);
 				return *this;
 			}
 			// Atrribute获取函数
 			bool usable() const
 			{
-				return mImage!=nullptr;
+				return this->mImage!=nullptr;
 			}
 			std::size_t width() const
 			{
-				return mWidth;
+				return this->mWidth;
 			}
 			std::size_t height() const
 			{
-				return mHeight;
+				return this->mHeight;
 			}
 			// 重新设置尺寸
 			// resize将令您失去所有数据，请注意备份
 			// resize之前请注意判断您设置的尺寸是否与原来相同，以避免多余的性能开销
 			void resize(std::size_t w,std::size_t h)
 			{
-				delete[] mImage;
-				mImage=new pixel[h*w];
-				mWidth=w;
-				mHeight=h;
+				delete[] this->mImage;
+				this->mImage=new pixel[h*w];
+				this->mWidth=w;
+				this->mHeight=h;
 			}
 			// 填充图像
 			void fill(const pixel& pix)
 			{
-				if(mImage==nullptr)
+				if(this->mImage==nullptr)
 					throw std::logic_error(__func__);
-				for(pixel* it=mImage; it!=mImage+mWidth*mHeight; ++it) *it=pix;
+				for(pixel* it=this->mImage; it!=this->mImage+this->mWidth*this->mHeight; ++it) *it=pix;
 			}
 			// 清空图像
 			void clear()
 			{
-				if(mImage!=nullptr) {
-					delete[] mImage;
-					mImage=new pixel[mHeight*mWidth];
+				if(this->mImage!=nullptr) {
+					delete[] this->mImage;
+					this->mImage=new pixel[mHeight*mWidth];
 				}
 			}
 			// 通过二维坐标访问图像
 			// 您不必在意double与std::size_t之间转换的警告
 			pixel& at(const std::array<std::size_t,2>& posit)
 			{
-				if(mImage==nullptr)
+				if(this->mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(posit[0]<0||posit[1]<0||posit[0]>mWidth-1||posit[1]>mHeight-1)
+				if(posit[0]<0||posit[1]<0||posit[0]>this->mWidth-1||posit[1]>this->mHeight-1)
 					throw std::out_of_range(__func__);
-				return mImage[posit[1]*mWidth+posit[0]];
+				return this->mImage[posit[1]*this->mWidth+posit[0]];
 			}
 			const pixel& at(const std::array<std::size_t,2>& posit) const
 			{
-				if(mImage==nullptr)
+				if(this->mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(posit[0]<0||posit[1]<0||posit[0]>mWidth-1||posit[1]>mHeight-1)
+				if(posit[0]<0||posit[1]<0||posit[0]>this->mWidth-1||posit[1]>this->mHeight-1)
 					throw std::out_of_range(__func__);
-				return mImage[posit[1]*mWidth+posit[0]];
+				return this->mImage[posit[1]*this->mWidth+posit[0]];
 			}
 			// 单点绘制函数
 			void draw(const std::array<std::size_t,2>& posit,const pixel& pix)
 			{
-				at(posit)=pix;
+				this->at(posit)=pix;
 			}
 			void draw_by_scale(const std::array<double,2>& posit,const pixel& pix)
 			{
-				at({std::size_t(mWidth*posit[0]),std::size_t(mHeight*posit[1])})=pix;
+				this->at({std::size_t(this->mWidth*posit[0]),std::size_t(this->mHeight*posit[1])})=pix;
 			}
 			// 多点绘制函数，可设置为连接各个点。当连接多个点时将不允许通过比例绘制
 			void draw(const std::list<std::array<std::size_t,2>>& points,const pixel& pix,bool connect_points=false)
 			{
 				if(!connect_points) {
 					for(auto &it:points)
-						draw(it,pix);
+						this->draw(it,pix);
 				} else {
 					auto p0=points.begin();
 					auto p1=++points.begin();
@@ -400,7 +399,7 @@ namespace cov {
 							a=h;
 						a=std::abs(a);
 						for(double c=0; c<=1; c+=1.0/a) {
-							draw({std::size_t(x1+c*w),std::size_t(y1+c*h)},pix);
+							this->draw({std::size_t(x1+c*w),std::size_t(y1+c*h)},pix);
 						}
 					}
 				}
@@ -408,30 +407,30 @@ namespace cov {
 			void draw_by_scale(const std::list<std::array<double,2>>& points,const pixel&pix)
 			{
 				for(auto &it:points)
-					draw_by_scale(it,pix);
+					this->draw_by_scale(it,pix);
 			}
 			// 绘制图像函数，你同样可以通过设置最后一个参数来开启通过比例绘制
 			void draw(const std::array<std::size_t,2>& posit,const image& img)
 			{
 				std::size_t col(posit[0]),row(posit[1]);
-				if(mImage==nullptr)
+				if(this->mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(col<0||row<0||col>mWidth-1||row>mHeight-1)
+				if(col<0||row<0||col>this->mWidth-1||row>this->mHeight-1)
 					throw std::out_of_range(__func__);
-				for(std::size_t r=row; r<mHeight&&r-row<img.mHeight; ++r)
-					for(std::size_t c=col; c<mWidth&&c-col<img.mWidth; ++c)
-						mImage[r*mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
+				for(std::size_t r=row; r<this->mHeight&&r-row<img.mHeight; ++r)
+					for(std::size_t c=col; c<this->mWidth&&c-col<img.mWidth; ++c)
+						this->mImage[r*this->mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
 			}
 			void draw_by_scale(const std::array<double,2>& posit,const image& img,bool draw_by_scale=false)
 			{
-				std::size_t col(mWidth*posit[0]),row(mHeight*posit[1]);
-				if(mImage==nullptr)
+				std::size_t col(this->mWidth*posit[0]),row(this->mHeight*posit[1]);
+				if(this->mImage==nullptr)
 					throw std::logic_error(__func__);
-				if(col<0||row<0||col>mWidth-1||row>mHeight-1)
+				if(col<0||row<0||col>this->mWidth-1||row>this->mHeight-1)
 					throw std::out_of_range(__func__);
-				for(std::size_t r=row; r<mHeight&&r-row<img.mHeight; ++r)
-					for(std::size_t c=col; c<mWidth&&c-col<img.mWidth; ++c)
-						mImage[r*mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
+				for(std::size_t r=row; r<this->mHeight&&r-row<img.mHeight; ++r)
+					for(std::size_t c=col; c<this->mWidth&&c-col<img.mWidth; ++c)
+						this->mImage[r*this->mWidth+c]=img.mImage[(r-row)*img.mWidth+(c-col)];
 			}
 		};
 // 活动(Activity)基类
@@ -446,6 +445,8 @@ namespace cov {
 			baseActivity(const baseActivity&)=default;
 			baseActivity(baseActivity&&)=default;
 			virtual ~baseActivity();
+			baseActivity& operator=(const baseActivity&)=default;
+			baseActivity& operator=(baseActivity&&)=default;
 			// 控件的注册与注销
 			void login(baseCtrl*);
 			void logout(baseCtrl*);

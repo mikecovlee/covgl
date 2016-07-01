@@ -1,4 +1,5 @@
 #include "cgl_linux.cpp"
+#include "cgl6.h"
 #include "cgl_character.h"
 #include <thread>
 #include <mutex>
@@ -27,7 +28,9 @@ int main()
 	using namespace cov::gl;
 	ioctrl.init_output_method();
 	ioctrl.frame_limit(30);
-	image img(basic_io::get_target_width(),basic_io::get_target_height());
+	screen img;
+	img.resize(basic_io::get_target_width(),basic_io::get_target_height());
+	img.startDrawThread();
 	auto draw_ch=[&](const int* ch,int w,int h,int x,int y) {
 		for(int r=0; r<h; ++r) {
 			for(int c=0; c<w; ++c) {
@@ -83,7 +86,7 @@ int main()
 			draw_chs();
 			chs.pop_back();
 		}
-		ioctrl.update_image(img);
+		img.render();
 		if(!input.empty()) {
 			char in=input.front();
 			input.pop_front();
