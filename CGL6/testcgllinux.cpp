@@ -1,4 +1,5 @@
 #include "cgl_linux.cpp"
+#include "cgl6.h"
 #include <sstream>
 // Linux终端键盘I/O
 bool KbHit()
@@ -93,7 +94,9 @@ int main()
 	};
 	// 显示开始的倒计时
 	ioctrl.frame_limit(1);
-	image img(basic_io::get_target_width(),basic_io::get_target_height());
+	screen img;
+	//img.startDrawThread();
+	img.resize(basic_io::get_target_width(),basic_io::get_target_height());
 	auto draw_ch=[&](int* ch,int w,int h,int x,int y) {
 		for(int r=0; r<h; ++r) {
 			for(int c=0; c<w; ++c) {
@@ -115,6 +118,7 @@ int main()
 	draw_ch(chG,6,5,0.5*img.width()-10,0.5*img.height()-2.5);
 	draw_ch(chO,6,5,0.5*img.width()-2,0.5*img.height()-2.5);
 	draw_ch(chExc,6,5,0.5*img.width()+5,0.5*img.height()-2.5);
+	img.render();
 	ioctrl.update_image(img);
 	// 主循环
 	ioctrl.frame_limit(60);
@@ -185,7 +189,8 @@ int main()
 		for(int i=0; i<info.size(); ++i) {
 			img.draw({i,0},pixel({true,false}, {colors::white,colors::black},info[i]));
 		}
-		ioctrl.update_image(img);
+		img.render();
+		ioctrl.update_image(img.surface());
 	}
 	// 结束后处理得分
 	ioctrl.stop_output_method();

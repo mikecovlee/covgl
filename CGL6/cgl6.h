@@ -39,12 +39,15 @@ namespace cov {
 			keyboard* mKeyboard=nullptr;
 			gamepad* mGamepad=nullptr;
 			joystick* mJoystick=nullptr;
+			basic_io* mIoctrl=nullptr;
 			std::thread mDrawThread;
 			std::atomic<bool> mThreadRunning;
 			mutable std::mutex mThreadLocker;
-			std::vector<image> mFrameCache;
+			mutable std::vector<image> mFrameCache;
+			mutable image mCache;
 		public:
 			screen();
+			screen(basic_io*);
 			screen(const screen&)=delete;
 			screen(screen&&)=delete;
 			screen& operator=(const screen&)=delete;
@@ -57,6 +60,26 @@ namespace cov {
 			{
 				mThreadRunning=false;
 			}
+			void register_io_controller(basic_io* device)
+			{
+				mIoctrl=device;
+			}
+			void register_mouse_controller(mouse* device)
+			{
+				mMouse=device;
+			}
+			void register_keyboard_controller(keyboard* device)
+			{
+				mKeyboard=device;
+			}
+			void register_gamepad_controller(gamepad* device)
+			{
+				mGamepad=device;
+			}
+			void register_joystick_controller(joystick* device)
+			{
+				mJoystick=device;
+			}
 			virtual const image& surface() const override
 			{
 				mThreadLocker.lock();
@@ -64,9 +87,12 @@ namespace cov {
 					mThreadLocker.unlock();
 					return *this;
 				} else {
-					const image& ret=mFrameCache.back();
+					if(mThreadRunning) {
+						mCache=mFrameCache.back();
+						mFrameCache.pop_back();
+					}
 					mThreadLocker.unlock();
-					return ret;
+					return mCache;
 				}
 			}
 			virtual void render() override;
@@ -103,12 +129,13 @@ namespace cov {
 				return this->mJoystick;
 			}
 		};
+		static screen scr(&ioctrl);
 		screen::screen():mDrawThread([&] {
 			while(true)
 			{
 				this->mThreadLocker.lock();
-				if(this->mThreadRunning&&!this->mFrameCache.empty()) {
-					ioctrl.update_image(this->mFrameCache.back());
+				if(this->mIoctrl!=nullptr&&this->mThreadRunning&&!this->mFrameCache.empty()) {
+					this->mIoctrl->update_image(this->mFrameCache.back());
 					this->mFrameCache.pop_back();
 				} else {
 					std::this_thread::yield();
@@ -119,24 +146,46 @@ namespace cov {
 		{
 			mDrawThread.detach();
 		}
+		screen::screen(basic_io* ptr):mDrawThread([&] {
+			while(true)
+			{
+				this->mThreadLocker.lock();
+				if(this->mIoctrl!=nullptr&&this->mThreadRunning&&!this->mFrameCache.empty()) {
+					this->mIoctrl->update_image(this->mFrameCache.back());
+					this->mFrameCache.pop_back();
+				} else {
+					std::this_thread::yield();
+				}
+				this->mThreadLocker.unlock();
+			}
+		}),mThreadRunning(false),mIoctrl(ptr)
+		{
+			mDrawThread.detach();
+		}
 		void screen::render()
 		{
 			this->mThreadLocker.lock();
-			image renderer(*this);
+			mCache=*this;
+			if(mMouse!=nullptr)
+				mMouse->resize(mCache.width(),mCache.height());
 			for(auto&it:this->mCtrlList) {
 				if(it!=nullptr) {
 					it->render();
-					if(it->draw_by_scale())
-						renderer.draw_by_scale(it->posit(),it->surface());
-					else
-						renderer.draw({(std::size_t)it->posit()[0],(std::size_t)it->posit()[1]},it->surface());
+					if(it->draw_by_scale()) {
+						if(mMouse!=nullptr)
+							mMouse->login_with_image({(std::size_t)it->posit()[0]*this->mWidth,(std::size_t)it->posit()[1]*this->mHeight},it->surface(),it);
+						mCache.draw_by_scale(it->posit(),it->surface());
+					} else {
+						if(mMouse!=nullptr)
+							mMouse->login_with_image({(std::size_t)it->posit()[0],(std::size_t)it->posit()[1]},it->surface(),it);
+						mCache.draw({(std::size_t)it->posit()[0],(std::size_t)it->posit()[1]},it->surface());
+					}
 				}
 			}
 			this->mCtrlList.remove(nullptr);
-			this->mFrameCache.push_back(renderer);
+			this->mFrameCache.push_back(mCache);
 			this->mThreadLocker.unlock();
 		}
 	}
 }
-
 #endif

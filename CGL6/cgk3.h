@@ -483,14 +483,38 @@ namespace cov {
 			virtual const image& surface() const=0;
 			virtual void render()=0;
 			// Activity的硬件控制器
-			virtual mouse* mouse_controller()=0;
-			virtual mouse* const mouse_controller() const=0;
-			virtual keyboard* keyboard_controller()=0;
-			virtual keyboard* const keyboard_controller() const=0;
-			virtual gamepad* gamepad_controller()=0;
-			virtual gamepad* const gamepad_controller() const=0;
-			virtual joystick* joystick_controller()=0;
-			virtual joystick* const joystick_controller() const=0;
+			virtual mouse* mouse_controller()
+			{
+				return nullptr;
+			}
+			virtual mouse* const mouse_controller() const
+			{
+				return nullptr;
+			}
+			virtual keyboard* keyboard_controller()
+			{
+				return nullptr;
+			}
+			virtual keyboard* const keyboard_controller() const
+			{
+				return nullptr;
+			}
+			virtual gamepad* gamepad_controller()
+			{
+				return nullptr;
+			}
+			virtual gamepad* const gamepad_controller() const
+			{
+				return nullptr;
+			}
+			virtual joystick* joystick_controller()
+			{
+				return nullptr;
+			}
+			virtual joystick* const joystick_controller() const
+			{
+				return nullptr;
+			}
 		};
 // 控件(Control)基类
 		class baseCtrl:public baseClass {

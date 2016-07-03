@@ -28,9 +28,9 @@ int main()
 	using namespace cov::gl;
 	ioctrl.init_output_method();
 	ioctrl.frame_limit(30);
-	screen img;
+	screen img(&ioctrl);
+	//img.startDrawThread();
 	img.resize(basic_io::get_target_width(),basic_io::get_target_height());
-	img.startDrawThread();
 	auto draw_ch=[&](const int* ch,int w,int h,int x,int y) {
 		for(int r=0; r<h; ++r) {
 			for(int c=0; c<w; ++c) {
@@ -60,7 +60,10 @@ int main()
 		y=0.5*img.height()-2.5*h-(h-1);
 		for(auto&it:chs)
 		{
-			draw_ch(it,6,5,x,y);
+			try {
+				draw_ch(it,6,5,x,y);
+			} catch(std::out_of_range e) {
+			}
 			if(x+8>=img.width()-1) {
 				y+=6;
 				x=1;
@@ -87,6 +90,7 @@ int main()
 			chs.pop_back();
 		}
 		img.render();
+		ioctrl.update_image(img.surface());
 		if(!input.empty()) {
 			char in=input.front();
 			input.pop_front();

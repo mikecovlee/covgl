@@ -18,6 +18,12 @@
 // Copyright (C) 2016 Mike Covariant Lee(李登淳)
 // Version: 6.16.7.10 Beta
 
+#if __cplusplus < 201103L
+#error Covariant C++ Library需要您的编译器支持C++11(C++0x)或者更高标准。请检查您否忘记了[-std=c++11]编译选项。
+#else
+
+// CGL6 I/O主文件
+
 #include "covstdlib.h"
 #include "cgk3.h"
 #include <cstdio>
@@ -32,7 +38,7 @@ namespace cov {
 			//鼠标事件
 			//左键点击，右键点击，滚轮点击，滚轮向上，滚轮向下
 			enum class events {
-			    null,left_click,right_click,roller_click,roller_up,roller_down
+			    null,cursor_move,left_click,right_click,roller_click,roller_up,roller_down
 			};
 		protected:
 			events mEvent=events::null;
@@ -300,3 +306,4 @@ namespace cov {
 		}
 	}
 }
+#endif
