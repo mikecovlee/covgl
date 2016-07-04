@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Copyright (C) 2016 Mike Covariant Lee(李登淳)
-// Version: 6.16.7.10 Beta
+// Version: 6.16.7.11
 
 #if __cplusplus < 201103L
 #error Covariant C++ Library需要您的编译器支持C++11(C++0x)或者更高标准。请检查您否忘记了[-std=c++11]编译选项。
@@ -87,15 +87,11 @@ namespace cov {
 				std::size_t col(posit[0]), row(posit[1]), sw(size[0]), sh(size[1]);
 				if (mCMap == nullptr)
 					throw std::logic_error(__func__);
-				if (col < 0 || row < 0 || col > mWidth || row > mHeight)
+				if (col < 0 || row < 0 || col > mWidth-1 || row > mHeight-1)
 					throw std::out_of_range(__func__);
 				for (std::size_t r = row; r < mHeight && r - row < sh; ++r)
 					for (std::size_t c = col; c < mWidth && c - col < sw; ++c)
 						mCMap[r * mWidth + c] = ptr;
-			}
-			void login_with_image(const std::array < std::size_t, 2 > &posit, const image & img, baseCtrl * ptr)
-			{
-				login(posit, {img.width(), img.height()}, ptr);
 			}
 			//注销
 			void logout(baseCtrl * ptr)

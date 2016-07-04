@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Copyright (C) 2016 Mike Covariant Lee(李登淳)
-// Kernel Version: 3.16.7.10
+// Kernel Version: 3.16.7.11
 
 #if __cplusplus < 201103L
 #error Covariant C++ Library需要您的编译器支持C++11(C++0x)或者更高标准。请检查您否忘记了[-std=c++11]编译选项。
@@ -30,6 +30,7 @@
 #include <utility>
 #include <array>
 #include <list>
+#include <cstdio>
 
 namespace cov {
 	namespace gl {
@@ -107,11 +108,11 @@ namespace cov {
 					mLambda(ptr);
 				}
 			};
-			baseLambda* mFunc;
+			baseLambda* mFunc=nullptr;
 			static std::size_t eventId;
 			std::size_t mId=++eventId;
 		public:
-			event()=delete;
+			event()=default;
 			template<typename T>event(T func):mFunc(new lambda<T>(func)) {}
 			event(const event&)=delete;
 			event(event&&)=delete;
@@ -135,7 +136,14 @@ namespace cov {
 			// 使用一个基类指针激活事件
 			void active(baseClass* ptr) const
 			{
-				mFunc->active(ptr);
+				if(mFunc!=nullptr)
+					mFunc->active(ptr);
+			}
+			// 重新设置事件处理函数
+			template<typename T> void rebind(T func)
+			{
+				delete mFunc;
+				mFunc=new lambda<T>(func);
 			}
 		};
 // 像素类
@@ -461,7 +469,7 @@ namespace cov {
 				if(!this->registered(ptr))
 					throw std::logic_error(__func__);
 				this->logout(ptr);
-				this->mCtrlList.push_front(ptr);
+				this->mCtrlList.push_back(ptr);
 				this->mFocalPoint=ptr;
 			}
 			// 设置及更换焦点
@@ -528,16 +536,12 @@ namespace cov {
 			// 位置
 			std::array<double,2> mPosit;
 		public:
-			// 硬件事件的处理函数
-			static void mouse_event_handle(baseClass*) {}
-			static void keyboard_event_handle(baseClass*) {}
-			static void gamepad_event_handle(baseClass*) {}
-			// 鼠标键盘以及游戏手柄事件，这里默认链接到了三个空函数上，请不要偷懒，最好自己写一个
+			// 鼠标键盘以及游戏手柄事件
 			event mouse_event;
 			event keyboard_event;
 			event gamepad_event;
 			// 构造函数
-			baseCtrl():mPosit({0,0}),mouse_event(mouse_event_handle),keyboard_event(keyboard_event_handle),gamepad_event(gamepad_event_handle) {}
+			baseCtrl():mPosit({0,0}) {}
 			baseCtrl(const baseCtrl&)=default;
 			baseCtrl(baseCtrl&&)=default;
 			virtual ~baseCtrl()
@@ -598,6 +602,9 @@ namespace cov {
 			// 控件的渲染及绘制
 			virtual const image& surface() const=0;
 			virtual void render()=0;
+			// 控件实际尺寸的获取
+			virtual std::size_t real_width() const=0;
+			virtual std::size_t real_height() const=0;
 		};
 // 各类的类外实现
 		std::size_t event::eventId=0;
@@ -609,7 +616,7 @@ namespace cov {
 		void baseActivity::login(baseCtrl* ptr)
 		{
 			for(auto&it:this->mCtrlList) if(it==ptr) return;
-			this->mCtrlList.push_back(ptr);
+			this->mCtrlList.push_front(ptr);
 			ptr->host(this);
 		}
 		void baseActivity::logout(baseCtrl* ptr)
