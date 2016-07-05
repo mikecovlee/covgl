@@ -23,6 +23,8 @@
 #else
 
 // CGL6 I/O主文件
+// Special Thanks
+// Testing: Dxkite
 
 #include "covstdlib.h"
 #include "cgk3.h"
@@ -70,6 +72,8 @@ namespace cov {
 			{
 				delete[]mCMap;
 				mCMap = new baseCtrl *[w * h];
+				for(std::size_t i=0; i<w*h; ++i)
+					mCMap[i]=nullptr;
 				mWidth = w;
 				mHeight = h;
 			}
@@ -79,6 +83,8 @@ namespace cov {
 				if (mCMap != nullptr) {
 					delete[]mCMap;
 					mCMap = new baseCtrl *[mWidth * mHeight];
+					for(std::size_t i=0; i<mWidth*mHeight; ++i)
+						mCMap[i]=nullptr;
 				}
 			}
 			//注册
@@ -123,7 +129,8 @@ namespace cov {
 				mCY=posit[1];
 				mEvent=ev;
 				baseCtrl *obj = mCMap[mCY * mWidth + mCX];
-				obj->mouse_event.active(obj);
+				if(obj!=nullptr)
+					obj->mouse_event.active(obj);
 			}
 		};
 //输出方法基类
