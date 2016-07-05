@@ -452,12 +452,21 @@ namespace cov {
 			baseActivity()=default;
 			baseActivity(const baseActivity&)=default;
 			baseActivity(baseActivity&&)=default;
-			virtual ~baseActivity();
+			virtual ~baseActivity()=default;
 			baseActivity& operator=(const baseActivity&)=default;
 			baseActivity& operator=(baseActivity&&)=default;
 			// 控件的注册与注销
-			void login(baseCtrl*);
-			void logout(baseCtrl*);
+			void login(baseCtrl* ptr)
+			{
+				for(auto&it:this->mCtrlList) if(it==ptr) return;
+				this->mCtrlList.push_front(ptr);
+			}
+			void logout(baseCtrl* ptr)
+			{
+				this->mCtrlList.remove(ptr);
+				if(this->mFocalPoint==ptr)
+					this->mFocalPoint=nullptr;
+			}
 			bool registered(baseCtrl* ptr) const
 			{
 				for(auto&it:this->mCtrlList) if(it==ptr) return true;
@@ -527,10 +536,8 @@ namespace cov {
 // 控件(Control)基类
 		class baseCtrl:public baseClass {
 		protected:
-			// 宿主Activity指针
-			baseActivity* mHost=nullptr;
 			// 可见性
-			bool mVisable=false;
+			bool mVisable=true;
 			// 是否通过比例绘制
 			bool mDrawByScale=false;
 			// 位置
@@ -544,11 +551,7 @@ namespace cov {
 			baseCtrl():mPosit({0,0}) {}
 			baseCtrl(const baseCtrl&)=default;
 			baseCtrl(baseCtrl&&)=default;
-			virtual ~baseCtrl()
-			{
-				if(this->mHost!=nullptr)
-					this->mHost->logout(this);
-			}
+			virtual ~baseCtrl()=default;
 			// 做了好久的思想斗争，最终还是把show和hide改成了虚函数，同志们尽情DIY吧…
 			virtual void show()
 			{
@@ -559,18 +562,6 @@ namespace cov {
 				this->mVisable=false;
 			}
 			// 这些基本的Attribute设置获取函数就算了吧，性能优先
-			baseActivity* host()
-			{
-				return this->mHost;
-			}
-			baseActivity* const host() const
-			{
-				return this->mHost;
-			}
-			void host(baseActivity* ptr)
-			{
-				this->mHost=ptr;
-			}
 			bool visable() const
 			{
 				return this->mVisable;
@@ -606,26 +597,7 @@ namespace cov {
 			virtual std::size_t real_width() const=0;
 			virtual std::size_t real_height() const=0;
 		};
-// 各类的类外实现
 		std::size_t event::eventId=0;
-		baseActivity::~baseActivity()
-		{
-			for(auto&it:this->mCtrlList)
-				it->host(nullptr);
-		}
-		void baseActivity::login(baseCtrl* ptr)
-		{
-			for(auto&it:this->mCtrlList) if(it==ptr) return;
-			this->mCtrlList.push_front(ptr);
-			ptr->host(this);
-		}
-		void baseActivity::logout(baseCtrl* ptr)
-		{
-			this->mCtrlList.remove(ptr);
-			if(this->mFocalPoint==ptr)
-				this->mFocalPoint=nullptr;
-			ptr->host(nullptr);
-		}
 	}
 }
 #endif

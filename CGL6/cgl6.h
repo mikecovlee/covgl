@@ -175,62 +175,54 @@ namespace cov {
 				return mRenderer;
 			}
 			virtual void render() override;
-			virtual mouse* mouse_controller() override
+		};
+		class button:public baseCtrl {
+		protected:
+			image mRenderer;
+			std::string mText;
+			pixel mEdge;
+		public:
+			button():mText("button"),mEdge({true,false}, {colors::white,colors::cyan},'#') {}
+			button(const button&)=default;
+			button(button&&)=default;
+			virtual ~button()=default;
+			void text(const std::string& str)
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->mouse_controller();
-				else
-					return nullptr;
+				this->mText=str;
 			}
-			virtual mouse* const mouse_controller() const override
+			std::string& text()
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->mouse_controller();
-				else
-					return nullptr;
+				return this->mText;
 			}
-			virtual keyboard* keyboard_controller() override
+			const std::string& text() const
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->keyboard_controller();
-				else
-					return nullptr;
+				return this->mText;
 			}
-			virtual keyboard* const keyboard_controller() const override
+			void edge(const pixel& pix)
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->keyboard_controller();
-				else
-					return nullptr;
+				this->mEdge=pix;
 			}
-			virtual gamepad* gamepad_controller() override
+			pixel& edge()
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->gamepad_controller();
-				else
-					return nullptr;
+				return this->mEdge;
 			}
-			virtual gamepad* const gamepad_controller() const override
+			const pixel& edge() const
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->gamepad_controller();
-				else
-					return nullptr;
+				return this->mEdge;
 			}
-			virtual joystick* joystick_controller() override
+			virtual std::size_t real_width() const
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->joystick_controller();
-				else
-					return nullptr;
+				return this->mText.size()+4;
 			}
-			virtual joystick* const joystick_controller() const override
+			virtual std::size_t real_height() const
 			{
-				if(this->mHost!=nullptr)
-					return this->mHost->joystick_controller();
-				else
-					return nullptr;
+				return 3;
 			}
+			virtual const image& surface() const override
+			{
+				return this->mRenderer;
+			}
+			virtual void render() override;
 		};
 // 对象定义和类外实现
 		static screen scr(&ioctrl);
@@ -240,7 +232,7 @@ namespace cov {
 			if(mMouse!=nullptr)
 				mMouse->resize(mRenderer.width(),mRenderer.height());
 			for(auto&it:this->mCtrlList) {
-				if(it!=nullptr) {
+				if(it!=nullptr&&it->visable()) {
 					it->render();
 					if(it->draw_by_scale()) {
 						if(mMouse!=nullptr)
@@ -275,7 +267,7 @@ namespace cov {
 			}
 			mRenderer.draw({1,3},*this);
 			for(auto&it:this->mCtrlList) {
-				if(it!=nullptr) {
+				if(it!=nullptr&&it->visable()) {
 					it->render();
 					if(it->draw_by_scale())
 						this->mRenderer.draw({(std::size_t)it->posit()[0]*this->mWidth+1,(std::size_t)it->posit()[1]*this->mHeight+3},it->surface());
@@ -284,6 +276,19 @@ namespace cov {
 				}
 			}
 			this->mCtrlList.remove(nullptr);
+		}
+		void button::render()
+		{
+			this->mRenderer.resize(this->real_width(),this->real_height());
+			this->mRenderer.fill(this->mEdge);
+			pixel pix=this->mEdge;
+			for(std::size_t x=1; x<mRenderer.width()-1; ++x) {
+				if(x>1&&x<mRenderer.width()-2)
+					pix.image(this->mText.at(x-2));
+				else
+					pix.image(' ');
+				this->mRenderer.draw({x,1},pix);
+			}
 		}
 	}
 }
