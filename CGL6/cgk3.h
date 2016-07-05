@@ -30,7 +30,6 @@
 #include <utility>
 #include <array>
 #include <list>
-#include <cstdio>
 
 namespace cov {
 	namespace gl {

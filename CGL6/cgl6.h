@@ -28,17 +28,23 @@
 
 #include "cgk3.h"
 #include "basic_io.h"
+#include <thread>
+#include <atomic>
+#include <mutex>
 
 namespace cov {
 	namespace gl {
 // 屏幕类
 		class screen:virtual public baseActivity,virtual public image {
 		protected:
+			// 硬件控制器指针
 			mouse* mMouse=nullptr;
 			keyboard* mKeyboard=nullptr;
 			gamepad* mGamepad=nullptr;
 			joystick* mJoystick=nullptr;
 			basic_io* mIoctrl=nullptr;
+			// 其他成员
+			bool mHideCursor=false;
 			pixel mCursor;
 			image mRenderer;
 		public:
@@ -49,6 +55,9 @@ namespace cov {
 			screen(screen&&)=delete;
 			screen& operator=(const screen&)=delete;
 			screen& operator=(screen&&)=delete;
+			// 鼠标指针图像接口
+			// 当一个可用的鼠标设备被注册后，鼠标指针就会显示
+			// 你也可以手动设置不显示鼠标指针
 			void cursor(const pixel& pix)
 			{
 				this->mCursor=pix;
@@ -61,6 +70,15 @@ namespace cov {
 			{
 				return this->mCursor;
 			}
+			void show_cursor()
+			{
+				this->mHideCursor=false;
+			}
+			void hide_cursor()
+			{
+				this->mHideCursor=true;
+			}
+			// 设备接口
 			void register_io_controller(basic_io* device)
 			{
 				mIoctrl=device;
@@ -81,11 +99,6 @@ namespace cov {
 			{
 				mJoystick=device;
 			}
-			virtual const image& surface() const override
-			{
-				return mRenderer;
-			}
-			virtual void render() override;
 			virtual mouse* mouse_controller() override
 			{
 				return this->mMouse;
@@ -118,20 +131,41 @@ namespace cov {
 			{
 				return this->mJoystick;
 			}
+			// 绘制接口
+			virtual const image& surface() const override
+			{
+				return mRenderer;
+			}
+			virtual void render() override;
 		};
 // Window控件类
 		class window:public baseCtrl,public baseActivity,public image {
 		protected:
+			//属性
 			pixel mEdge;
 			std::string mTitle;
+			//绘制与线程
 			image mRenderer;
+			image mFrameCache;
+			std::thread* mThread=nullptr;
+			std::atomic<bool> mThreadRunning;
+			std::atomic<bool> mThreadStopped;
+			std::mutex mLocker;
 		public:
-			window()=default;
+			window():mThreadRunning(false),mThreadStopped(true) {}
 			window(const window&)=delete;
 			window(window&&)=delete;
 			window& operator=(const window&)=delete;
 			window& operator=(window&&)=delete;
-			virtual ~window()=default;
+			virtual ~window()
+			{
+				if(mThread!=nullptr) {
+					mThreadRunning=false;
+					while(!mThreadStopped);
+					delete mThread;
+				}
+			}
+			// 属性设置
 			void edge(const pixel& pix)
 			{
 				this->mEdge=pix;
@@ -156,6 +190,29 @@ namespace cov {
 			{
 				return this->mTitle;
 			}
+			// 线程接口
+			bool thread_running() const
+			{
+				return this->mThreadRunning;
+			}
+			// 此函数只能在线程结束时调用，请勿随意调用！会产生不可预期的后果！
+			bool thread_stopped()
+			{
+				this->mThreadStopped=true;
+			}
+			template<typename T> void main_thread(T func)
+			{
+				if(mThread!=nullptr) {
+					mThreadRunning=false;
+					while(!mThreadStopped);
+					delete mThread;
+				}
+				mThread=new std::thread(func,this);
+				mThreadRunning=true;
+				mThreadStopped=false;
+				mThread->detach();
+			}
+			// 图形接口
 			virtual std::size_t real_width() const
 			{
 				if(this->usable())
@@ -172,7 +229,7 @@ namespace cov {
 			}
 			virtual const image& surface() const override
 			{
-				return mRenderer;
+				return this->mFrameCache;
 			}
 			virtual void render() override;
 		};
@@ -186,6 +243,7 @@ namespace cov {
 			button(const button&)=default;
 			button(button&&)=default;
 			virtual ~button()=default;
+			// 属性设置接口
 			void text(const std::string& str)
 			{
 				this->mText=str;
@@ -210,6 +268,7 @@ namespace cov {
 			{
 				return this->mEdge;
 			}
+			// 图形接口
 			virtual std::size_t real_width() const
 			{
 				return this->mText.size()+4;
@@ -246,13 +305,13 @@ namespace cov {
 				}
 			}
 			this->mCtrlList.remove(nullptr);
-			if(mMouse!=nullptr)
+			if(mMouse!=nullptr&&!this->mHideCursor)
 				this->mRenderer.draw({mMouse->cursor_x(),mMouse->cursor_y()},this->mCursor);
 		}
 		void window::render()
 		{
+			this->mLocker.lock();
 			this->mRenderer.resize(this->real_width(),this->real_height());
-			//this->mRenderer.fill(this->mEdge);
 			for(std::size_t x=0; x<this->mRenderer.width(); ++x)
 				this->mRenderer.draw({{x,0},{x,2},{x,this->mRenderer.height()-1}},this->mEdge);
 			for(std::size_t y=0; y<this->mRenderer.height(); ++y)
@@ -276,6 +335,8 @@ namespace cov {
 				}
 			}
 			this->mCtrlList.remove(nullptr);
+			this->mFrameCache=this->mRenderer;
+			this->mLocker.unlock();
 		}
 		void button::render()
 		{
