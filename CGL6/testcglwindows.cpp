@@ -305,6 +305,7 @@ int main()
 			case 'c':
 				colors_menu.hide();
 				win_main_menu.hide();
+				scr_main_menu.hide();
 				if(!scr.mouse_controller()->active({cx,cy},mouse::events::right_click)) {
 					scr_main_menu.posit({scr.mouse_controller()->cursor_x()+1,scr.mouse_controller()->cursor_y()});
 					scr_main_menu.show();
