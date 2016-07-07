@@ -86,8 +86,8 @@ int main()
 	mouse cursor;
 	scr.register_mouse_controller(&cursor);
 	scr.cursor(pixel({true,false}, {colors::black,colors::white},'^'));
-	bool mouse_clicked=false;
 	std::list<window*> windows;
+	bool move=false;
 	//菜单
 	menu scr_main_menu;
 	menu win_main_menu;
@@ -97,8 +97,10 @@ int main()
 	colors_menu.hide();
 	colors_menu.text("Colors");
 	//菜单标签
+	lable smm_newwin("New");
 	lable smm_about("About");
 	lable smm_exit("Exit");
+	lable wmm_move("Move");
 	lable wmm_info("Info");
 	lable wmm_close("Close");
 	lable cm_red("Red",pixel({true,true}, {colors::red,colors::white},' '));
@@ -116,6 +118,17 @@ int main()
 	scr_main_menu.mouse_event.rebind([&](baseClass* ptr) {
 		menu* obj=dynamic_cast<menu*>(ptr);
 		obj->mouse_controller()->active({scr.mouse_controller()->cursor_x()-obj->posit()[0],scr.mouse_controller()->cursor_y()-obj->posit()[1]},scr.mouse_controller()->mouse_event());
+	});
+	wmm_move.mouse_event.rebind([&](baseClass* obj) {
+		if(win_main_menu.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			if(move) {
+				move=false;
+				wmm_move.text("Move");
+			} else {
+				move=true;
+				wmm_move.text("Dock");
+			}
+		}
 	});
 	wmm_close.mouse_event.rebind([&](baseClass* obj) {
 		if(win_main_menu.mouse_controller()->mouse_event()==mouse::events::left_click) {
@@ -174,7 +187,7 @@ int main()
 		menu* obj=dynamic_cast<menu*>(ptr);
 		if(scr.mouse_controller()->cursor_x()<win_main_menu.posit()[0]+win_main_menu.real_width()&&
 		        scr.mouse_controller()->cursor_y()<win_main_menu.posit()[1]+win_main_menu.real_height()) {
-			obj->posit({win_main_menu.posit()[0]+win_main_menu.real_width()-1,scr.mouse_controller()->cursor_y()});
+			obj->posit({win_main_menu.posit()[0]+win_main_menu.real_width(),scr.mouse_controller()->cursor_y()});
 			obj->show();
 			scr.front(obj);
 		} else {
@@ -182,8 +195,10 @@ int main()
 		}
 	});
 	//将标签添加至菜单
+	scr_main_menu.add_element(&smm_newwin);
 	scr_main_menu.add_element(&smm_about);
 	scr_main_menu.add_element(&smm_exit);
+	win_main_menu.add_element(&wmm_move);
 	win_main_menu.add_element(&wmm_info);
 	win_main_menu.add_element(&colors_menu);
 	win_main_menu.add_element(&wmm_close);
@@ -198,7 +213,6 @@ int main()
 	scr.login(&win_main_menu);
 	scr.login(&colors_menu);
 	// 窗口触摸事件处理
-	int hcx(0),hcy(0);
 	auto func=[&](baseClass* ptr) {
 		if(ptr==nullptr)
 			return;
@@ -207,25 +221,10 @@ int main()
 		window* obj=dynamic_cast<window*>(ptr);
 		switch(scr.mouse_controller()->mouse_event()) {
 		case mouse::events::cursor_move:
-			if(mouse_clicked&&scr.focal_point()!=nullptr) {
-				if(scr.mouse_controller()->cursor_x()>=hcx)
-					scr.focal_point()->posit()[0]+=scr.mouse_controller()->cursor_x()-hcx;
-				else
-					scr.focal_point()->posit()[0]-=hcx-scr.mouse_controller()->cursor_x();
-				if(scr.mouse_controller()->cursor_y()>=hcy)
-					scr.focal_point()->posit()[1]+=scr.mouse_controller()->cursor_y()-hcy;
-				else
-					scr.focal_point()->posit()[1]-=hcy-scr.mouse_controller()->cursor_y();
-			}
-			hcx=scr.mouse_controller()->cursor_x();
-			hcy=scr.mouse_controller()->cursor_y();
 			break;
 		case mouse::events::left_click:
-			scr.focus(obj);
-			if(mouse_clicked)
-				mouse_clicked=false;
-			else
-				mouse_clicked=true;
+			move=false;
+			wmm_move.text("Move");
 			break;
 		case mouse::events::right_click:
 			win_main_menu.posit({scr.mouse_controller()->cursor_x()+1,scr.mouse_controller()->cursor_y()});
@@ -235,16 +234,12 @@ int main()
 			break;
 		}
 	};
-	//窗口管理器按钮
-	button create;
-	create.text("New Window");
 	int windows_count=1;
-	int wx(1),wy(5);
-	create.mouse_event.rebind([&](baseClass* ptr) {
-		if(ptr==&create&&scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+	smm_newwin.mouse_event.rebind([&](baseClass* obj) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
 			window* win=new window;
 			win->resize(20,10);
-			win->posit({wx,wy});
+			win->posit({scr.mouse_controller()->cursor_x(),scr.mouse_controller()->cursor_y()});
 			win->title("Window "+toString(windows_count));
 			switch(windows_count%6) {
 			case 0:
@@ -272,12 +267,8 @@ int main()
 			windows.push_back(win);
 			win->main_thread(winthread);
 			++windows_count;
-			wx+=3;
-			wy+=3;
 		}
 	});
-	create.posit({1,1});
-	scr.login(&create);
 	// 主循环
 	int cx(0),cy(0);
 	while(running) {
@@ -286,15 +277,19 @@ int main()
 			switch(GetKbHit()) {
 			case 'w':
 				--cy;
+				if(move) --scr.focal_point()->posit()[1];
 				break;
 			case 's':
 				++cy;
+				if(move) ++scr.focal_point()->posit()[1];
 				break;
 			case 'a':
 				--cx;
+				if(move) --scr.focal_point()->posit()[0];
 				break;
 			case 'd':
 				++cx;
+				if(move) ++scr.focal_point()->posit()[0];
 				break;
 			case 'x':
 				colors_menu.hide();
