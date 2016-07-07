@@ -223,11 +223,10 @@ int main()
 		case mouse::events::cursor_move:
 			break;
 		case mouse::events::left_click:
-			if(move)
-			{
+			if(move) {
 				move=false;
 				wmm_move.text("Move");
-			}else
+			} else
 				scr.focus(obj);
 			break;
 		case mouse::events::right_click:
@@ -299,7 +298,12 @@ int main()
 				colors_menu.hide();
 				win_main_menu.hide();
 				scr_main_menu.hide();
-				scr.mouse_controller()->active({cx,cy},mouse::events::left_click);
+				if(!scr.mouse_controller()->active({cx,cy},mouse::events::left_click)) {
+					if(move) {
+						move=false;
+						wmm_move.text("Move");
+					}
+				}
 				break;
 			case 'c':
 				colors_menu.hide();
