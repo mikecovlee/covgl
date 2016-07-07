@@ -223,8 +223,12 @@ int main()
 		case mouse::events::cursor_move:
 			break;
 		case mouse::events::left_click:
-			move=false;
-			wmm_move.text("Move");
+			if(move)
+			{
+				move=false;
+				wmm_move.text("Move");
+			}else
+				scr.focus(obj);
 			break;
 		case mouse::events::right_click:
 			win_main_menu.posit({scr.mouse_controller()->cursor_x()+1,scr.mouse_controller()->cursor_y()});
