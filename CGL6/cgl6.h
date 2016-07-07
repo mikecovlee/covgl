@@ -200,14 +200,14 @@ namespace cov {
 			{
 				this->mThreadStopped=true;
 			}
-			template<typename T> void main_thread(T func)
+			template<typename T,typename...Argt> void main_thread(T func,Argt&&...args)
 			{
 				if(mThread!=nullptr) {
 					mThreadRunning=false;
 					while(!mThreadStopped);
 					delete mThread;
 				}
-				mThread=new std::thread(func,this);
+				mThread=new std::thread(func,this,args...);
 				mThreadRunning=true;
 				mThreadStopped=false;
 				mThread->detach();
@@ -239,7 +239,7 @@ namespace cov {
 			std::string mText;
 			pixel mEdge;
 		public:
-			button():mText("button"),mEdge({true,false}, {colors::white,colors::cyan},'#') {}
+			button():mText("button"),mEdge({true,true}, {colors::black,colors::white},'#') {}
 			button(const button&)=default;
 			button(button&&)=default;
 			virtual ~button()=default;
@@ -280,6 +280,99 @@ namespace cov {
 			virtual const image& surface() const override
 			{
 				return this->mRenderer;
+			}
+			virtual void render() override;
+		};
+		class lable:public baseCtrl {
+		protected:
+			std::string mText;
+			pixel mAttri;
+			image mImg;
+		public:
+			lable():mText("lable"),mAttri({true,true}, {colors::black,colors::white},' ') {}
+			lable(const std::string& str):mText(str),mAttri({true,true}, {colors::black,colors::white},' ') {}
+			lable(const std::string& str,const pixel& pix):mText(str),mAttri(pix) {}
+			virtual ~lable()=default;
+			void text(const std::string& str)
+			{
+				this->mText=str;
+			}
+			std::string& text()
+			{
+				return this->mText;
+			}
+			const std::string& text() const
+			{
+				return this->mText;
+			}
+			void attri(const pixel& pix)
+			{
+				this->mAttri=pix;
+			}
+			pixel& attri()
+			{
+				return this->mAttri;
+			}
+			const pixel& attri() const
+			{
+				return this->mAttri;
+			}
+			virtual std::size_t real_width() const override
+			{
+				return this->mText.size();
+			}
+			virtual std::size_t real_height() const override
+			{
+				return 1;
+			}
+			virtual const image& surface() const override
+			{
+				return this->mImg;
+			}
+			virtual void render()
+			{
+				this->mImg.resize(this->real_width(),this->real_height());
+				for(std::size_t x; x<this->mImg.width(); ++x) {
+					this->mAttri.image(this->mText.at(x));
+					this->mImg.draw({x,0},this->mAttri);
+				}
+			}
+		};
+		class menu:public lable {
+		protected:
+			mouse mMouse;
+			std::list<lable*> mElements;
+		public:
+			menu()=default;
+			virtual ~menu()=default;
+			mouse* mouse_controller()
+			{
+				return &this->mMouse;
+			}
+			const mouse* mouse_controller() const
+			{
+				return &this->mMouse;
+			}
+			void add_element(lable* obj)
+			{
+				if(obj!=nullptr)
+					this->mElements.push_back(obj);
+			}
+			void remove_element(lable* obj)
+			{
+				this->mElements.remove(obj);
+			}
+			virtual std::size_t real_width() const override
+			{
+				std::size_t max_size(0);
+				for(auto&it:this->mElements)
+					if(it!=nullptr&&it->text().size()>max_size)
+						max_size=it->text().size();
+				return max_size+2;
+			}
+			virtual std::size_t real_height() const override
+			{
+				return this->mElements.size();
 			}
 			virtual void render() override;
 		};
@@ -349,6 +442,27 @@ namespace cov {
 				else
 					pix.image(' ');
 				this->mRenderer.draw({x,1},pix);
+			}
+		}
+		void menu::render()
+		{
+			this->mImg.resize(this->real_width(),this->real_height());
+			this->mMouse.resize(this->mImg.width(),this->mImg.height());
+			this->mAttri.image(' ');
+			this->mImg.fill(this->mAttri);
+			std::size_t count(0),begin(0);
+			for(auto&it:this->mElements) {
+				begin=(mImg.width()-it->text().size())*0.5;
+				for(std::size_t x=begin; x-begin<it->text().size(); ++x) {
+					it->attri().image(it->text().at(x-begin));
+					this->mImg.draw({x,count},it->attri());
+				}
+				if(it->type()==typeid(menu)) {
+					this->mAttri.image('>');
+					this->mImg.draw({0,count},this->mAttri);
+				}
+				this->mMouse.login({0,count}, {this->mImg.width(),1},it);
+				++count;
 			}
 		}
 	}

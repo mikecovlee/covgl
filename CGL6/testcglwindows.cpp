@@ -48,7 +48,7 @@ void winthread(cov::gl::window* win)
 	std::mutex locker;
 	// 线程主循环
 	while(win->thread_running()) {
-		cov::clocks.delay(cov::timer::timeUnit::milliSec,35);
+		cov::clocks.delay(cov::timer::timeUnit::milliSec,1000/ioctrl.fps());
 		if(x_grow)
 			++x;
 		else
@@ -78,16 +78,127 @@ int main()
 {
 	using namespace cov::gl;
 	// 初始化I/O
+	bool running=true;
 	scr.resize(basic_io::get_target_width(),basic_io::get_target_height());
 	ioctrl.init_output_method();
-	ioctrl.frame_limit(60);
+	ioctrl.frame_limit(30);
 	// 初始化鼠标和窗口管理器
 	mouse cursor;
 	scr.register_mouse_controller(&cursor);
 	scr.cursor(pixel({true,false}, {colors::black,colors::white},'^'));
 	bool mouse_clicked=false;
-	int hcx(0),hcy(0);
 	std::list<window*> windows;
+	//菜单
+	menu scr_main_menu;
+	menu win_main_menu;
+	menu colors_menu;
+	scr_main_menu.hide();
+	win_main_menu.hide();
+	colors_menu.hide();
+	colors_menu.text("Colors");
+	//菜单标签
+	lable smm_about("About");
+	lable smm_exit("Exit");
+	lable wmm_info("Info");
+	lable wmm_close("Close");
+	lable cm_red("Red",pixel({true,true}, {colors::red,colors::white},' '));
+	lable cm_green("Green",pixel({true,true}, {colors::green,colors::white},' '));
+	lable cm_blue("Blue",pixel({true,true}, {colors::blue,colors::white},' '));
+	lable cm_magenta("Magenta",pixel({true,true}, {colors::magenta,colors::white},' '));
+	lable cm_cyan("Cyan",pixel({true,true}, {colors::cyan,colors::white},' '));
+	lable cm_yellow("Yellow",pixel({true,true}, {colors::yellow,colors::white},' '));
+	//鼠标事件处理
+	smm_exit.mouse_event.rebind([&](baseClass* obj) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			running=false;
+		}
+	});
+	scr_main_menu.mouse_event.rebind([&](baseClass* ptr) {
+		menu* obj=dynamic_cast<menu*>(ptr);
+		obj->mouse_controller()->active({scr.mouse_controller()->cursor_x()-obj->posit()[0],scr.mouse_controller()->cursor_y()-obj->posit()[1]},scr.mouse_controller()->mouse_event());
+	});
+	wmm_close.mouse_event.rebind([&](baseClass* obj) {
+		if(win_main_menu.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			scr.focal_point()->hide();
+			win_main_menu.hide();
+		}
+	});
+	win_main_menu.mouse_event.rebind([&](baseClass* ptr) {
+		colors_menu.hide();
+		menu* obj=dynamic_cast<menu*>(ptr);
+		obj->mouse_controller()->active({scr.mouse_controller()->cursor_x()-obj->posit()[0],scr.mouse_controller()->cursor_y()-obj->posit()[1]},scr.mouse_controller()->mouse_event());
+	});
+	cm_red.mouse_event.rebind([&](baseClass* ptr) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			dynamic_cast<window*>(scr.focal_point())->edge(pixel({true,false}, {colors::white,colors::red},'*'));
+			colors_menu.hide();
+			win_main_menu.hide();
+		}
+	});
+	cm_green.mouse_event.rebind([&](baseClass* ptr) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			dynamic_cast<window*>(scr.focal_point())->edge(pixel({true,false}, {colors::white,colors::green},'*'));
+			colors_menu.hide();
+			win_main_menu.hide();
+		}
+	});
+	cm_blue.mouse_event.rebind([&](baseClass* ptr) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			dynamic_cast<window*>(scr.focal_point())->edge(pixel({true,false}, {colors::white,colors::blue},'*'));
+			colors_menu.hide();
+			win_main_menu.hide();
+		}
+	});
+	cm_magenta.mouse_event.rebind([&](baseClass* ptr) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			dynamic_cast<window*>(scr.focal_point())->edge(pixel({true,false}, {colors::white,colors::magenta},'*'));
+			colors_menu.hide();
+			win_main_menu.hide();
+		}
+	});
+	cm_cyan.mouse_event.rebind([&](baseClass* ptr) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			dynamic_cast<window*>(scr.focal_point())->edge(pixel({true,false}, {colors::white,colors::cyan},'*'));
+			colors_menu.hide();
+			win_main_menu.hide();
+		}
+	});
+	cm_yellow.mouse_event.rebind([&](baseClass* ptr) {
+		if(scr.mouse_controller()->mouse_event()==mouse::events::left_click) {
+			dynamic_cast<window*>(scr.focal_point())->edge(pixel({true,false}, {colors::white,colors::yellow},'*'));
+			colors_menu.hide();
+			win_main_menu.hide();
+		}
+	});
+	colors_menu.mouse_event.rebind([&](baseClass* ptr) {
+		menu* obj=dynamic_cast<menu*>(ptr);
+		if(scr.mouse_controller()->cursor_x()<win_main_menu.posit()[0]+win_main_menu.real_width()&&
+		        scr.mouse_controller()->cursor_y()<win_main_menu.posit()[1]+win_main_menu.real_height()) {
+			obj->posit({win_main_menu.posit()[0]+win_main_menu.real_width()-1,scr.mouse_controller()->cursor_y()});
+			obj->show();
+			scr.front(obj);
+		} else {
+			obj->mouse_controller()->active({scr.mouse_controller()->cursor_x()-obj->posit()[0],scr.mouse_controller()->cursor_y()-obj->posit()[1]},scr.mouse_controller()->mouse_event());
+		}
+	});
+	//将标签添加至菜单
+	scr_main_menu.add_element(&smm_about);
+	scr_main_menu.add_element(&smm_exit);
+	win_main_menu.add_element(&wmm_info);
+	win_main_menu.add_element(&colors_menu);
+	win_main_menu.add_element(&wmm_close);
+	colors_menu.add_element(&cm_red);
+	colors_menu.add_element(&cm_green);
+	colors_menu.add_element(&cm_blue);
+	colors_menu.add_element(&cm_magenta);
+	colors_menu.add_element(&cm_cyan);
+	colors_menu.add_element(&cm_yellow);
+	// 注册菜单
+	scr.login(&scr_main_menu);
+	scr.login(&win_main_menu);
+	scr.login(&colors_menu);
+	// 窗口触摸事件处理
+	int hcx(0),hcy(0);
 	auto func=[&](baseClass* ptr) {
 		if(ptr==nullptr)
 			return;
@@ -117,7 +228,10 @@ int main()
 				mouse_clicked=true;
 			break;
 		case mouse::events::right_click:
-			obj->hide();
+			win_main_menu.posit({scr.mouse_controller()->cursor_x()+1,scr.mouse_controller()->cursor_y()});
+			scr.front(&win_main_menu);
+			scr.focal_point(obj);
+			win_main_menu.show();
 			break;
 		}
 	};
@@ -166,7 +280,7 @@ int main()
 	scr.login(&create);
 	// 主循环
 	int cx(0),cy(0);
-	while(true) {
+	while(running) {
 		//控制鼠标
 		if(KbHit()) {
 			switch(GetKbHit()) {
@@ -183,17 +297,26 @@ int main()
 				++cx;
 				break;
 			case 'x':
+				colors_menu.hide();
+				win_main_menu.hide();
+				scr_main_menu.hide();
 				scr.mouse_controller()->active({cx,cy},mouse::events::left_click);
 				break;
 			case 'c':
-				scr.mouse_controller()->active({cx,cy},mouse::events::right_click);
+				colors_menu.hide();
+				win_main_menu.hide();
+				if(!scr.mouse_controller()->active({cx,cy},mouse::events::right_click)) {
+					scr_main_menu.posit({scr.mouse_controller()->cursor_x()+1,scr.mouse_controller()->cursor_y()});
+					scr_main_menu.show();
+					scr.front(&scr_main_menu);
+				}
 				break;
 			}
 			scr.mouse_controller()->active({cx,cy},mouse::events::cursor_move);
 		}
 		// 绘制
 		scr.resize(basic_io::get_target_width(),basic_io::get_target_height());
-		scr.fill(pixel({true,false}, {colors::black,colors::white},' '));
+		scr.fill(pixel({true,false}, {colors::white,colors::black},' '));
 		scr.render();
 		ioctrl.update_image(scr.surface());
 		// 窗口管理器
@@ -208,5 +331,6 @@ int main()
 	}
 	for(auto&it:windows)
 		delete it;
+	ioctrl.stop_output_method();
 	return 0;
 }

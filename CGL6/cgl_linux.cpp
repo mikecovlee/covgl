@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Copyright (C) 2016 Mike Covariant Lee(李登淳)
-// Version: 6.16.7.10 Beta
+// Version: 6.16.7.10
 
 #include "basic_io.h"
 #include <iostream>
@@ -109,7 +109,7 @@ namespace cov {
 			for(std::size_t y=0; y<img.height()&&y<sh; ++y) {
 				for(std::size_t x=0; x<img.width()&&x<sw; ++x) {
 					const pixel& pix=img.at({x,y});
-					std::string cmd="\e[";
+					std::string cmd="\e[0m\e[";
 					switch(pix.color()[0]) {
 					case colors::white:
 						cmd+="37;";

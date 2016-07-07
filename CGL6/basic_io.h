@@ -117,7 +117,7 @@ namespace cov {
 				return mCY;
 			}
 			//激活鼠标事件
-			void active(const std::array < std::size_t, 2 > &posit,events ev)
+			bool active(const std::array < std::size_t, 2 > &posit,events ev)
 			{
 				if(ev==events::null)
 					throw std::invalid_argument(__func__);
@@ -129,8 +129,11 @@ namespace cov {
 				mCY=posit[1];
 				mEvent=ev;
 				baseCtrl *obj = mCMap[mCY * mWidth + mCX];
-				if(obj!=nullptr)
+				if(obj!=nullptr) {
 					obj->mouse_event.active(obj);
+					return true;
+				} else
+					return false;
 			}
 		};
 //输出方法基类

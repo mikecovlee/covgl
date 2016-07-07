@@ -480,6 +480,14 @@ namespace cov {
 				this->mCtrlList.push_back(ptr);
 				this->mFocalPoint=ptr;
 			}
+			// 前置控件
+			void front(baseCtrl* ptr)
+			{
+				if(!this->registered(ptr))
+					throw std::logic_error(__func__);
+				this->logout(ptr);
+				this->mCtrlList.push_back(ptr);
+			}
 			// 设置及更换焦点
 			void focal_point(baseCtrl* ptr)
 			{
