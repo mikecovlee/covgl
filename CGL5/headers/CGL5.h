@@ -9,10 +9,10 @@
 // 李登淳编写
 
 
-#include "Source/CGK/CGK2.cpp"
-#include "Source/Controls/Controls.h"
-#include "Source/Controls/Window.cpp"
-#include "Source/Keyboard_Layout.h"
+#include "./CGK/CGK2.cpp"
+#include "./Controls/Controls.h"
+#include "./Controls/Window.cpp"
+#include "./Keyboard_Layout.h"
 
 
 namespace cgl
@@ -23,7 +23,7 @@ namespace cgl
 }
 
 
-#include "Source/ConsoleEdition.h"
+#include "./ConsoleEdition.h"
 
 
 namespace cgl

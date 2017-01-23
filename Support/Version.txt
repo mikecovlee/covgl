@@ -1,7 +1,0 @@
-Covariant Studio
-
-Covariant Graphics Library
-
-Version:
-5.16.1.1
-Console Edition
