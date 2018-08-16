@@ -1,0 +1,128 @@
+// string改进版本
+// 李登淳编写
+// 现仅支持中文宽字符，其他宽字符暂时不支持
+#include<string>
+#include<vector>
+class c_char {
+  char ch[4];
+  size_t rsize, msize;
+public:
+    c_char() {
+    ch[0] = '\0';
+    rsize = msize = 0;
+  } c_char(char in) {
+    ch[0] = in;
+    rsize = msize = 1;
+  }
+  c_char(std::string in) {
+    int tmp = in[0];
+    if (tmp <= 130) {
+      ch[0] = in[0];
+      rsize = msize = 1;
+      return;
+    }
+    if (tmp > 226) {
+      for (int i = 0; i != 3; ++i)
+        ch[i] = in[i];
+      rsize = 2;
+      msize = 3;
+      return;
+    }
+    ch[0] = '\0';
+    rsize = msize = 0;
+  }
+  void operator=(char in) {
+    ch[0] = in;
+    rsize = msize = 1;
+  }
+  void operator=(std::string in) {
+    int tmp = in[0];
+    if (tmp <= 130) {
+      ch[0] = in[0];
+      rsize = msize = 1;
+      return;
+    }
+    if (tmp > 226) {
+      for (int i = 0; i != 3; ++i)
+        ch[i] = in[i];
+      rsize = 2;
+      msize = 3;
+      return;
+    }
+    ch[0] = '\0';
+    rsize = msize = 0;
+  }
+  std::string txt() {
+    std::string ret;
+    for (int i = 0; i != msize; ++i)
+      ret += ch[i];
+    return ret;
+  }
+  size_t size() {
+    return rsize;
+  }
+  size_t fullsize() {
+    return msize;
+  }
+};
+class c_string {
+  std::vector < c_char > str;
+  std::string text;
+  size_t isize, rsize;
+    std::vector < c_char > process(std::string);
+public:
+    c_string() {
+    str.resize(1);
+    isize = rsize = 0;
+  } c_string(std::string in) {
+    text = in;
+    str = process(in);
+    isize = str.size();
+    rsize = 0;
+    for (int i = 0; i != str.size(); ++i)
+      rsize += str[i].size();
+  }
+  void operator=(std::string in) {
+    text = in;
+    str = process(in);
+    isize = str.size();
+    rsize = 0;
+    for (int i = 0; i != str.size(); ++i)
+      rsize += str[i].size();
+  }
+  c_char operator[] (int i) {
+    return str[i];
+  }
+  std::string txt() {
+    return text;
+  }
+  size_t size() {
+    return rsize;
+  }
+  size_t charsize() {
+    return isize;
+  }
+  size_t fullsize() {
+    return text.size();
+  }
+};
+std::vector < c_char > c_string::process(std::string in) {
+  std::vector < c_char > ret;
+  for (int i = 0; i != in.size(); ++i) {
+    if (in[i] > 226) {
+      std::string tmp;
+      for (int k = 0; k != 3; ++k)
+        tmp += in[k];
+      c_char push(tmp);
+      ret.push_back(push);
+      i += 2;
+      continue;
+    }
+    if (in[i] <= 130) {
+      c_char push(in[i]);
+      ret.push_back(push);
+      continue;
+    }
+  }
+  return ret;
+}

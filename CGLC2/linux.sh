@@ -1,0 +1,3 @@
+echo 正在编译...
+g++ -Wl,--no-as-needed -std=c++11 -lpthread *.cpp -o out.bin
+./out.bin

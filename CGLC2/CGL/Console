@@ -1,0 +1,4 @@
+#ifndef GUARD_CGL_Console
+#define GUARD_CGL_Console
+#include"Source/Console/main.cpp"
+#endif

@@ -1,0 +1,1 @@
+CGI，全称Console Graphics Interface，是CGL的原型。CGI已经实现了一些基础性的功能。

@@ -1,0 +1,149 @@
+// T&C Studio官方开发控件
+// 适用于Build 15-04-211-x
+#include"Console"
+class pencil:public cglc::baseStaticView {
+public:
+  cglc::c_point nib;
+  pencil() {
+    x = y = 0;
+    renderer.init(1, 1);
+  } const cglc::buffer & draw() {
+    renderer.draw(0, 0, nib);
+    return renderer;
+  }
+};
+class static_text:public pencil {
+  std::string str;
+  void clean() {
+    for (int m = 0; m != str.size(); ++m)
+      if (str[m] == '\n')
+        str[m] = '\0';
+} public:
+  static_text(const std::string & txt) {
+    x = y = 0;
+    str = txt;
+    clean();
+    renderer.init(str.size(), 1);
+  }
+  const cglc::buffer & draw() {
+    for (int n = 0; n != str.size(); ++n) {
+      nib = str[n];
+      renderer.draw(n, 0, nib);
+    }
+    return renderer;
+  }
+  void operator=(const std::string & txt) {
+    str = txt;
+    clean();
+    renderer.init(str.size(), 1);
+  }
+  size_t size() {
+    return str.size();
+  }
+};
+class window:public cglc::baseStaticView {
+  int mw, mh;
+  char img;
+  cglc::buffer mrenderer;
+public:
+  cglc::buffer renderer;
+  std::string title;
+  window(int w, int h) {
+    title = "CGLC Window";
+    img = '+';
+    mw = w;
+    mh = h;
+    mrenderer.init(mw, mh);
+    wid = w-2;
+    hig = h-4;
+    renderer.init(wid, hig);
+  }
+  window(cglc::screen scr) {
+    title = "CGLC Window";
+    img = '+';
+    mw = scr.width();
+    mh = scr.high();
+    mrenderer.init(mw, mh);
+    wid = mw - 2;
+    hig = mh - 4;
+    renderer.init(wid, hig);
+  }
+  void clean() {
+    renderer.reset();
+    mrenderer.reset();
+  }
+  int width() {
+    return wid;
+  }
+  int high() {
+    return hig;
+  }
+  bool draw(int, int, cglc::buffer);
+  const cglc::buffer & draw();
+  bool operator<<(baseStaticView &);
+};
+const cglc::buffer & window::draw() {
+  mrenderer.back = renderer.back;
+  mrenderer.reset();
+  cglc::c_point tmp;
+  tmp.back = renderer.back;
+  tmp = img;
+  for (int i = 0; i < mrenderer.width(); ++i) {
+    mrenderer.draw(i, 0, tmp);
+    mrenderer.draw(i, 2, tmp);
+    mrenderer.draw(i, mrenderer.high() - 1, tmp);
+  }
+  for (int i = 0; i < mrenderer.high(); ++i) {
+    mrenderer.draw(0, i, tmp);
+    mrenderer.draw(mrenderer.width() - 1, i, tmp);
+  }
+  for (int n = 0; n != title.size(); ++n) {
+    tmp = title[n];
+    if (n >= wid)
+      break;
+    mrenderer.draw(n + 1, 1, tmp);
+  }
+  draw(0, 0, renderer);
+  return mrenderer;
+}
+bool window::operator<<(baseStaticView & tmp) {
+  if (!tmp.use() || tmp.x >= wid || tmp.y >= hig || tmp.x < 0 || tmp.y < 0)
+    return false;
+  cglc::buffer temp = tmp.draw();
+  int i, k, m, n;
+  i = k = 0;
+  m = tmp.y;
+  n = tmp.x;
+  while (m < hig && i < temp.high()) {
+    while (n < wid && k < temp.width()) {
+      renderer.draw(n, m, temp.read(k, i));
+      ++n;
+      ++k;
+    }
+    n = tmp.x;
+    k = 0;
+    ++m;
+    ++i;
+  }
+  return true;
+}
+bool window::draw(int x, int y, cglc::buffer tmp) {
+  if (!tmp.use() || x < 0 || y < 0 || x >= wid || y >= hig)
+    return false;
+  int i, k, m, n;
+  i = k = 0;
+  m = y + 3;
+  n = x + 1;
+  while (m - 3 < hig && i < tmp.high()) {
+    while (n - 1 < wid && k < tmp.width()) {
+      mrenderer.draw(n, m, tmp.read(k, i));
+      ++n;
+      ++k;
+    }
+    n = x + 1;
+    k = 0;
+    ++m;
+    ++i;
+  }
+  return true;
+}

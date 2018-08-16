@@ -1,0 +1,14 @@
+CGI开发规范
+适用于Build 15-04-xx-200-x
+
+1.所有控件必须是baseStaticView类的子类，可以从其他baseStaticView子类中再次继承。
+
+2.所有控件必须实现返回类型为cgi::buffer的公有draw函数用于绘制控件。
+
+4.控件的私有变量一律声明protected而不是private。
+
+5.不得脱离screen进行屏幕输出，禁止使用cout,endl,printf等。
+
+6.非必要在参数中不得出现指针，尽量进行引用。
+	
+7.代码注释详细，每个类前必须注释此类的作用，每个函数必须注释函数作用，需注明用法，如必须请使用readme

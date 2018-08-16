@@ -1,0 +1,240 @@
+#ifndef GUARD_CGL_Console
+#define GUARD_CGL_Console
+// Covariate Graphics Library for Console
+// T&C Studio出品
+// 李登淳编写
+// Copyright 2015 (C) T&C Studio
+// Version 2.1.1
+// Build 15-04-211-03
+// Linux Kernel Version
+#include<iostream>
+#include<string>
+#include<vector>
+#include<time.h>
+#include<termios.h>
+#include<sys/types.h>
+#include<sys/ioctl.h>
+#include<unistd.h>
+namespace cglc {
+  static int automatic;
+  static const int crazy_slow = 1000000;
+  static const int slow = 18000;
+  static const int normal = 14000;
+  static const int fast = 10000;
+  static const int max = 6000;
+  static const int crazy_fast = 10;
+  void gotoxy(int x, int y) {
+    std::cout << "\x1B[" << x << ";" << y << "f";
+  } class c_color {
+    std::string m_color;
+  public:
+    c_color() {
+      m_color = "37";
+    } void operator=(std::string tmp_color) {
+      m_color = tmp_color;
+    } std::string color() {
+      return m_color;
+    }
+  };
+  class c_point {
+    char img;
+  public:
+      c_color text, back;
+      c_point() {
+      img = '@';
+      text = "37";
+      back = "40";
+    }
+    void operator=(char tmp) {
+      img = tmp;
+    }
+    char image() {
+      return img;
+    }
+  };
+  class buffer {
+    bool iuse;
+    c_point initnib;
+    int wid, hig;
+      std::vector < std::vector < c_point >> paper;
+  public:
+      c_color back;
+      buffer() {
+      back = "40";
+      iuse = false;
+    } void init(int, int);
+    bool reset();
+    bool use() {
+      return iuse;
+    }
+    bool draw(int x, int y, c_point tmp) {
+      if (!iuse || x < 0 || y < 0 || x >= wid || y >= hig)
+        return false;
+      paper[y][x] = tmp;
+      return true;
+    }
+    c_point read(int x, int y) {
+      return paper[y][x];
+    }
+    int width() {
+      return wid;
+    }
+    int high() {
+      return hig;
+    }
+  };
+  class baseStaticView {
+  protected:
+    int wid, hig;
+    buffer renderer;
+  public:
+    int x, y;
+      baseStaticView() {
+      x = y = 0;
+      wid = hig = 1;
+      renderer.init(wid, hig);
+    } baseStaticView(int t_wid, int t_hig) {
+      x = y = 0;
+      wid = t_wid;
+      hig = t_hig;
+      renderer.init(wid, hig);
+    }
+    virtual bool use() {
+      return renderer.use();
+    }
+    virtual const buffer & draw() {
+      return renderer;
+    }
+  };
+  class screen {
+    friend bool operator<<(baseStaticView &, baseStaticView &);
+  protected:
+    int wid, hig;
+  public:
+      buffer renderer;
+      screen();
+      screen(int, int);
+    bool operator<<(baseStaticView &);
+    bool draw(int, int, buffer);
+    void updscr(int);
+    int width() {
+      return wid;
+    } int high() {
+      return hig;
+    }
+    void clean(bool cls_all = false) {
+      if (cls_all)
+        updscr(0);
+      renderer.reset();
+    }
+  };
+}
+// 函数体
+void cglc::buffer::init(int w, int h) {
+  iuse = true;
+  initnib = ' ';
+  wid = w;
+  hig = h;
+  paper.resize(hig);
+  for (int i = 0; i != hig; ++i)
+    paper[i].resize(wid);
+  for (int i = 0; i != hig; ++i)
+    for (int k = 0; k != wid; ++k)
+      paper[i][k] = initnib;
+}
+bool cglc::buffer::reset() {
+  if (!iuse)
+    return false;
+  initnib.back = back.color();
+  for (int i = 0; i != hig; ++i)
+    for (int k = 0; k != wid; ++k)
+      paper[i][k] = initnib;
+  return true;
+}
+cglc::screen::screen() {
+  struct winsize size;
+  ioctl(STDIN_FILENO, TIOCGWINSZ, &size);
+  wid = size.ws_col;
+  hig = size.ws_row - 1;
+  renderer.init(wid, hig);
+}
+cglc::screen::screen(int m_wid, int m_hig) {
+  wid = m_wid;
+  hig = m_hig;
+  renderer.init(m_wid, m_hig);
+}
+bool cglc::screen::operator<<(baseStaticView & tmp) {
+  if (!tmp.use() || tmp.x >= wid || tmp.y >= hig || tmp.x < 0 || tmp.y < 0)
+    return false;
+  buffer temp = tmp.draw();
+  int i, k, m, n;
+  i = k = 0;
+  m = tmp.y;
+  n = tmp.x;
+  while (m < hig && i < temp.high()) {
+    while (n < wid && k < temp.width()) {
+      renderer.draw(n, m, temp.read(k, i));
+      ++n;
+      ++k;
+    }
+    n = tmp.x;
+    k = 0;
+    ++m;
+    ++i;
+  }
+  return true;
+}
+bool cglc::screen::draw(int x, int y, buffer tmp) {
+  if (!tmp.use() || x < 0 || y < 0 || x >= wid || y >= hig)
+    return false;
+  int i, k, m, n;
+  i = k = 0;
+  m = y;
+  n = x;
+  while (m < hig && i < tmp.high()) {
+    while (n < wid && k < tmp.width()) {
+      renderer.draw(n, m, tmp.read(k, i));
+      ++n;
+      ++k;
+    }
+    n = x;
+    k = 0;
+    ++m;
+    ++i;
+  }
+  return true;
+}
+void cglc::screen::updscr(int ref = automatic) {
+  gotoxy(0, 0);
+  for (int i = 0; i != renderer.high(); ++i) {
+    for (int k = 0; k != renderer.width(); ++k) {
+      if (renderer.read(k, i).image() == '\n')
+        continue;
+      std::cout << "\e[" << renderer.read(k, i).text.color() << ";1m\e[" <<
+        renderer.read(k, i).back.color() << ";1m" << renderer.read(k,
+                                                                   i).image();
+    }
+    std::cout << std::endl;
+  }
+  usleep(ref);
+}
+int irefresh_test() {
+  clock_t start, finish;
+  start = clock();
+  int i = 0;
+  finish = clock();
+  while (((finish - start) / CLOCKS_PER_SEC) < 1) {
+    finish = clock();
+    ++i;
+  }
+  i = i / 1000;
+  i = 12000 - i;
+  return i;
+}
+int cglc_main();
+int main() {
+  std::cout << "\33[?25l";
+  cglc::automatic = irefresh_test();
+  return cglc_main();
+}
+#endif
